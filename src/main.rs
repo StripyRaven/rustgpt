@@ -30,6 +30,9 @@ struct AppState {
     chat_repo: ChatRepository,
 }
 
+// ----------------------------------------------------------------------------
+// MAIN
+// ----------------------------------------------------------------------------
 #[tokio::main]
 async fn main() {
     dotenv::dotenv().ok();
@@ -42,6 +45,7 @@ async fn main() {
         .init();
 
     let db_path = dotenv::var("DATABASE_PATH").unwrap();
+
     let options = SqliteConnectOptions::new()
         .filename(db_path)
         .journal_mode(sqlx::sqlite::SqliteJournalMode::Wal)
