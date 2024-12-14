@@ -158,7 +158,7 @@ pub async fn generate_sse_stream(
                     break; // Receiver has dropped, stop sending.
                 }
             }
-            _ => (),
+            //_ => (),
         }
     }
 
