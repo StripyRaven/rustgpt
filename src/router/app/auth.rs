@@ -1,7 +1,14 @@
 // LOCAL
-use crate::model::{app_state::AppState, user::User};
+use crate::model::{
+    app_state::AppState,
+    user::{
+        User,
+        UserNormalized
+    }
+};
 
 use axum::{
+    // debug_handler,
     extract::State,
     http::StatusCode,
     response::{Html, IntoResponse, Redirect, Response},
@@ -26,6 +33,7 @@ pub async fn login(State(state): State<Arc<AppState>>) -> Html<String> {
     Html(rendered)
 }
 
+// TODO move to model
 #[derive(Debug)]
 pub enum LogInError {
     InvalidCredentials,
@@ -47,21 +55,22 @@ impl IntoResponse for LogInError {
     }
 }
 
+// TODO move to models
 #[derive(Deserialize, Debug)]
 pub struct LogIn {
     email: String,
     password: String,
 }
 
-#[axum::debug_handler]
+// #[debug_handler]
 pub async fn login_form(
     cookies: Cookies,
     state: State<Arc<AppState>>,
     Form(log_in): Form<LogIn>,
 ) -> Result<Redirect, LogInError> {
     // Verify password
-    let user = sqlx::query_as!(
-        User,
+    let user:UserNormalized = sqlx::query_as!(
+        UserNormalized,
         "SELECT users.*, settings.openai_api_key FROM users LEFT JOIN settings ON settings.user_id=users.id WHERE users.email = $1",
         log_in.email,
     ).fetch_one(&*state.pool).await
@@ -71,11 +80,12 @@ pub async fn login_form(
         return Err(LogInError::InvalidCredentials);
     }
 
-    let cookie = Cookie::build(("rust-gpt-session", user.id.to_string()))
+    let cookie: Cookie = Cookie::build(("rust-gpt-session", user.id.to_string()))
         // .domain("www.rust-lang.org")
         .path("/")
         // .secure(true)
-        .http_only(true);
+        .http_only(true)
+        .into();
 
     cookies.add(cookie);
 
@@ -149,12 +159,14 @@ pub async fn form_signup(
 
 #[axum::debug_handler]
 pub async fn logout(cookies: Cookies) -> Result<Redirect, StatusCode> {
-    let mut cookie = Cookie::build(("rust-gpt-session", ""))
+    let mut cookie: Cookie = Cookie::build(("rust-gpt-session", ""))
         .domain("localhost")
         .path("/")
         // .secure(true)
         .http_only(true)
-        .finish();
+        .into();
+    // .finish();
+
     cookie.make_removal();
 
     cookies.add(cookie);

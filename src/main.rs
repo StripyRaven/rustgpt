@@ -5,8 +5,8 @@ use axum::{
     http::{HeaderMap, StatusCode, Request},
     response::{IntoResponse, Response},
     Router,
-    routing::get,
-    extract::State,
+    //routing::get,
+    //extract::State,
 };
 
 use dotenv;
@@ -25,8 +25,8 @@ use std::{net::SocketAddr, path::Path, sync::Arc, time::Duration};
 use sqlx::{
     migrate::Migrator,
     sqlite::{SqliteConnectOptions, SqlitePoolOptions},
-    types::chrono::Local,
-    Pool, Sqlite,
+    //types::chrono::Local,
+    //Pool, Sqlite,
 };
 use tera::Tera;
 use tower_cookies::CookieManagerLayer;
@@ -128,17 +128,6 @@ async fn main() {
         .await
         .unwrap();
 }
-
-/*
-#[derive(Debug, sqlx::FromRow, Serialize, Clone)]
-pub struct User {
-    id: i64,
-    email: String,
-    password: String,
-    created_at: NaiveDateTime,
-    openai_api_key: Option<String>,
-}
-*/
 
 /// Utility function for mapping any error into a `500 Internal Server Error`
 /// response.

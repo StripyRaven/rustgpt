@@ -1,4 +1,9 @@
 # Rust_AI
+## Useeful
+
+- [RUST erroe code index](https://doc.rust-lang.org/error_codes/error-index.html)
+
+## Sources
 
 - [Main source](https://github.com/bitswired/rustgpt)
 - [Present fork](https://github.com/StripyRaven/rustgpt)

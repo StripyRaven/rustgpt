@@ -44,13 +44,19 @@ impl IntoResponse for ChatError {
     }
 }
 
-const MODELS: [(&str, &str, &str); 4] = [
+// TODO move to models and turn to vars, maybe .ENV beetter to Tree or Json or coomon struct with all necessary fields
+// array of 5 tuples with 3 string each
+const MODELS: [(&str, &str, &str); 5] = [
     (
         "GPT-4-Preview",
         "gpt-4-1106-preview",
         "This is the preview version of the GPT-4 model.",
     ),
-    ("GPT-4", "gpt-4", "Latest generation GPT-4 model."),
+    (
+        "GPT-4",
+        "gpt-4",
+        "Latest generation GPT-4 model."
+    ),
     (
         "GPT-3.5-16K",
         "gpt-3.5-turbo-16k",
@@ -60,6 +66,11 @@ const MODELS: [(&str, &str, &str); 4] = [
         "GPT-3.5",
         "gpt-3.5-turbo",
         "Standard GPT-3.5 model with turbo features.",
+    ),
+    (
+        "Ollama",
+        "qwen2.5-coder",
+        "Qwen coder were to define tokens?",
     ),
 ];
 
@@ -90,6 +101,7 @@ pub async fn chat(
     Html(rendered)
 }
 
+// TODO move to models
 #[derive(Deserialize, Debug)]
 pub struct NewChat {
     message: String,

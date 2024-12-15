@@ -1,5 +1,11 @@
 /// LOCAL
-use crate::model::{user::User, app_state::AppState};
+use crate::model::{
+    user::{
+        User,
+        UserNormalized
+    },
+    app_state::AppState
+};
 
 use axum::{
     extract::State,
@@ -19,7 +25,7 @@ use axum::{
         Extension,
     },
 };
-
+use chrono::NaiveDateTime;
 use std::sync::Arc;
 
 use tera::Context;
@@ -40,7 +46,8 @@ pub fn error_response(code: u16, message: &str) -> Response {
 /// The `extract_user` function attempts to parse the user ID from cookies
 /// and fetch the corresponding user from the database.
 /// If any step fails, it returns a default value.
-/// - Note: However, this approach can lead to potential issues if parsing or fetching operations fail unexpectedly.
+/// - [Note:] However, this approach can lead to potential issues if parsing or fetching operations fail unexpectedly.
+
 pub async fn extract_user<B>(
     State(state): State<Arc<AppState>>,
     cookies: Cookies,
@@ -50,14 +57,15 @@ pub async fn extract_user<B>(
 where
     B: Send + 'static,
 {
-    let session = cookies.get("rust-gpt-session");
+    let session = cookies.get("rust-AI-session");
 
-    let id: i64 = session.map_or(-1, |x| x.value().parse::<i64>()
+    let id: i64 = session.map_or(-1, |x| x.value()
+        .parse::<i64>()
         .unwrap_or(-1));
 
     // Get the user
     match sqlx::query_as!(
-        User,
+        UserNormalized,
         "SELECT users.*, settings.openai_api_key \
         FROM users LEFT JOIN settings ON settings.user_id=users.id \
         WHERE users.id = $1",
