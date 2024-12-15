@@ -1,10 +1,31 @@
+
+mod ai;
+use axum::{
+    //extract::RequestParts,
+    http::{HeaderMap, StatusCode, Request},
+    response::{IntoResponse, Response},
+    Router,
+    routing::get,
+    extract::State,
+};
+
 use dotenv;
-use axum::{http::StatusCode, Router};
-use serde::Serialize;
+mod model;
+use model::{
+    app_state,
+    repository::ChatRepository};
+
+mod middleware;
+// use middleware::extract_user;
+
+// use serde::Serialize;
+mod router;
+use router::app_router;
+use std::{net::SocketAddr, path::Path, sync::Arc, time::Duration};
 use sqlx::{
     migrate::Migrator,
     sqlite::{SqliteConnectOptions, SqlitePoolOptions},
-    types::chrono::NaiveDateTime,
+    types::chrono::Local,
     Pool, Sqlite,
 };
 use tera::Tera;
@@ -12,27 +33,10 @@ use tower_cookies::CookieManagerLayer;
 use tower_http::services::ServeDir;
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 
-mod router;
-use router::app_router;
-use std::{net::SocketAddr, path::Path, sync::Arc, time::Duration};
-mod ai;
-mod middleware;
-use middleware::extract_user;
-mod data;
-use data::repository::ChatRepository;
-
-use crate::middleware::handle_error;
-
-#[derive(Clone)]
-struct AppState {
-    pool: Arc<Pool<Sqlite>>,
-    tera: Tera,
-    chat_repo: ChatRepository,
-}
-
 // ----------------------------------------------------------------------------
 // MAIN
 // ----------------------------------------------------------------------------
+
 #[tokio::main]
 async fn main() {
     dotenv::dotenv().ok();
@@ -44,7 +48,7 @@ async fn main() {
         .with(tracing_subscriber::fmt::layer())
         .init();
 
-    let db_path = dotenv::var("DATABASE_PATH").unwrap();
+    let db_path = dotenv::var("DATABASE_PATH").unwrap(); // move to get db creds
 
     let options = SqliteConnectOptions::new()
         .filename(db_path)
@@ -59,10 +63,11 @@ async fn main() {
         .await
         .expect("can't connect to database");
 
-    // Create a new instance of `Migrator` pointing to the migrations folder.
+    // Create a new instance of `Migrator` pointing to the migrations' folder.
     let migrator = Migrator::new(Path::new(dotenv::var("MIGRATIONS_PATH").unwrap().as_str()))
         .await
         .unwrap();
+
     // Run the migrations.
     migrator.run(&pool).await.unwrap();
 
@@ -80,11 +85,12 @@ async fn main() {
         }
     };
 
-    let state = AppState {
+    let state = app_state::AppState {
         pool,
         tera,
         chat_repo,
     };
+
     let shared_app_state = Arc::new(state);
 
     // let jdoom = axum::middleware::from_fn_with_state(shared_app_state.clone(), auth);
@@ -101,23 +107,29 @@ async fn main() {
         .nest("/", app_router(shared_app_state.clone()))
         .layer(axum::middleware::from_fn_with_state(
             shared_app_state.clone(),
-            handle_error,
-        ))
+            middleware::handle_error,
+            )
+        )
         .layer(axum::middleware::from_fn_with_state(
             shared_app_state.clone(),
-            extract_user,
-        ))
+            middleware::extract_user,
+            )
+        )
         .layer(CookieManagerLayer::new());
 
     // run it with hyper
-    let addr = SocketAddr::from(([0, 0, 0, 0], 3000));
-    tracing::debug!("listening on {}", addr);
-    axum::Server::bind(&addr)
+    let soket_addr = SocketAddr::from(([0, 0, 0, 0], 3000));
+
+    tracing::debug!("listening on {}", soket_addr);
+
+    // https://crates.io/crates/axum-server
+    axum_server::bind(soket_addr)
         .serve(app.into_make_service())
         .await
         .unwrap();
 }
 
+/*
 #[derive(Debug, sqlx::FromRow, Serialize, Clone)]
 pub struct User {
     id: i64,
@@ -126,6 +138,7 @@ pub struct User {
     created_at: NaiveDateTime,
     openai_api_key: Option<String>,
 }
+*/
 
 /// Utility function for mapping any error into a `500 Internal Server Error`
 /// response.

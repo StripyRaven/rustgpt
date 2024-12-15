@@ -1,3 +1,9 @@
+// LOCAL
+use crate::model::{
+    user::User,
+    app_state::AppState
+};
+
 use axum::{
     extract::{Extension, Path, State},
     http::StatusCode,
@@ -8,8 +14,6 @@ use tera::Context;
 use tokio::fs;
 
 use std::{path::PathBuf, sync::Arc};
-
-use crate::{AppState, User};
 
 use serde::{de::DeserializeOwned, Deserialize, Serialize};
 

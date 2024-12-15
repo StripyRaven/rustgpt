@@ -1,3 +1,9 @@
+// LOCAL
+use crate::model::{
+    user::User,
+    app_state::AppState
+};
+
 use axum::{
     extract::{Extension, State},
     http::StatusCode,
@@ -6,11 +12,10 @@ use axum::{
 };
 
 use serde::Deserialize;
-use tera::Context;
-
 use std::sync::Arc;
 
-use crate::{AppState, User};
+use tera::Context;
+
 
 #[derive(Deserialize, Debug)]
 pub struct OpenAiAPIKey {

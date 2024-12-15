@@ -1,3 +1,6 @@
+// LOCAL
+use crate::model::{app_state::AppState, user::User};
+
 use axum::{
     extract::State,
     http::StatusCode,
@@ -6,12 +9,10 @@ use axum::{
 };
 
 use serde::Deserialize;
+use std::sync::Arc;
 use tera::Context;
 use tower_cookies::{Cookie, Cookies};
 
-use std::sync::Arc;
-
-use crate::{AppState, User};
 
 pub async fn login(State(state): State<Arc<AppState>>) -> Html<String> {
     let mut context = Context::new();
@@ -70,12 +71,12 @@ pub async fn login_form(
         return Err(LogInError::InvalidCredentials);
     }
 
-    let cookie = Cookie::build("rust-gpt-session", user.id.to_string())
+    let cookie = Cookie::build(("rust-gpt-session", user.id.to_string()))
         // .domain("www.rust-lang.org")
         .path("/")
         // .secure(true)
-        .http_only(true)
-        .finish();
+        .http_only(true);
+
     cookies.add(cookie);
 
     Ok(Redirect::to("/"))
@@ -148,8 +149,8 @@ pub async fn form_signup(
 
 #[axum::debug_handler]
 pub async fn logout(cookies: Cookies) -> Result<Redirect, StatusCode> {
-    let mut cookie = Cookie::build("rust-gpt-session", "")
-        // .domain("www.rust-lang.org")
+    let mut cookie = Cookie::build(("rust-gpt-session", ""))
+        .domain("localhost")
         .path("/")
         // .secure(true)
         .http_only(true)

@@ -1,0 +1,27 @@
+{
+  "name": "rust_gpt_my_fork",
+  "version": "1.0.0",
+  "description": "- [Main source](https://github.com/bitswired/rustgpt/assets/19983429/980a88b9-93df-48c7-a438-b232d2830e00) - [Present fork](https://github.com/StripyRaven/rustgpt)",
+  "main": "tailwind.config.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/StripyRaven/rustgpt.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/StripyRaven/rustgpt/issues"
+  },
+  "homepage": "https://github.com/StripyRaven/rustgpt#readme",
+  "devDependencies": {
+    "@tailwindcss/forms": "^0.5.9",
+    "@tailwindcss/typography": "^0.5.15",
+    "autoprefixer": "^10.4.20",
+    "postcss": "^8.4.49",
+    "tailwindcss": "^3.4.16"
+  }
+}

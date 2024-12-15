@@ -1,3 +1,9 @@
+// LOCAL
+use crate::model::{
+    user::User,
+    app_state::AppState
+};
+
 use axum::{
     extract::{Extension, Query, State},
     response::Html,
@@ -7,8 +13,6 @@ use serde::Deserialize;
 use tera::Context;
 
 use std::sync::Arc;
-
-use crate::{AppState, User};
 
 #[derive(Deserialize)]
 pub struct ErrorParams {

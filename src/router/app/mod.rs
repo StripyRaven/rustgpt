@@ -1,3 +1,10 @@
+
+// Locals
+use crate::{
+    middleware::valid_openai_api_key,
+    model::app_state::AppState
+};
+
 use axum::{
     routing::{get, post},
     Router,
@@ -5,16 +12,14 @@ use axum::{
 
 use std::sync::Arc;
 
-use crate::{middleware::valid_openai_api_key, AppState};
-
 mod home;
 use home::app;
-mod chat;
-use chat::{chat, chat_add_message, chat_by_id, chat_generate, delete_chat, new_chat};
 mod auth;
+use chat::{chat, chat_add_message, chat_by_id, chat_generate, delete_chat, new_chat};
 use auth::{form_signup, login, login_form, logout, signup};
 mod blog;
 use blog::{blog, blog_by_slug};
+mod chat;
 mod settings;
 use settings::{settings, settings_openai_api_key};
 mod error;

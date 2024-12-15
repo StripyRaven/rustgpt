@@ -1,6 +1,6 @@
 # Rust_AI
 
-- [Main source](https://github.com/bitswired/rustgpt/assets/19983429/980a88b9-93df-48c7-a438-b232d2830e00)
+- [Main source](https://github.com/bitswired/rustgpt)
 - [Present fork](https://github.com/StripyRaven/rustgpt)
 
 Welcome to the RustGPT repository! Here, you'll find a web ChatGPT clone entirely crafted using Rust and HTMX, where technology meets simplicity and performance. 🚀
@@ -20,6 +20,7 @@ So, for Rust enthusiasts and web developers alike, dive in to explore a world wh
 - **SQLite**: A lightweight yet powerful database for all your data persistence needs.
 - **Server Sent Events (SSE)**: Real-time streaming made easy to bring life to the ChatGPT interactions.
 - **HTMX**: No hefty JavaScript frameworks needed—HTMX keeps interactions snappy with simple HTML attributes.
+  - [HTMX common](https://habr.com/ru/companies/hexlet/articles/592961/)
 
 ## Tech Stack
 
@@ -36,6 +37,7 @@ Jump right into it by following these steps:
 1. Clone the repository.
 2. Create a .env
 
+### .env
 ```env
 MIGRATIONS_PATH=db/migrations
 TEMPLATES_PATH=templates
@@ -45,8 +47,8 @@ OPENAI_API_KEY=<api-key> (only necessary for tests, users will add their own key
 ```
 
 3. Install TailwindCSS Standalone in this repository: https://tailwindcss.com/blog/standalone-cli.
-  3.1. https://formulae.brew.sh/formula/tailwindcss
-4. `cargo install just` : install Just
+  3.1 [Brew](https://formulae.brew.sh/formula/tailwindcss)
+4. `cargo install just` : install [Just](https://github.com/casey/just)
 5. `just init`          : install additional tools and migrate the db
 6. `just dev`           : concurrently run tailwind and cargo run in watch mode
 7. Open your browser and enjoy chatting with your Rust-powered ChatGPT clone (port 3000 by default)

@@ -6,7 +6,7 @@ use serde_json::{json, Value};
 use tokio::sync::mpsc;
 use tokio_stream::StreamExt;
 
-use crate::data::model::ChatMessagePair;
+use crate::model::model::ChatMessagePair;
 
 // Define a struct to represent a model.
 #[derive(Serialize, Deserialize, Debug)]

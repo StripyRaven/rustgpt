@@ -1,23 +1,29 @@
+// LOCAL
+use crate::model::{
+    user::User,
+    app_state::AppState
+};
+
+use crate::{
+    ai::stream::{generate_sse_stream, list_engines, GenerationEvent},
+    model::model::ChatMessagePair,
+};
+
 use axum::{
     extract::{Extension, Path, State},
     http::StatusCode,
     response::{sse::Event, Html, IntoResponse, Response, Sse},
     Form, Json,
 };
-use tokio::sync::mpsc;
 
 use futures::stream::{self};
 use serde::{Deserialize, Serialize};
+use std::sync::Arc;
 use tera::Context;
+use tokio::sync::mpsc;
 use tokio_stream::wrappers::ReceiverStream; // This brings the necessary stream combinators into scope
 
-use std::sync::Arc;
 
-use crate::{
-    ai::stream::{generate_sse_stream, list_engines, GenerationEvent},
-    data::model::ChatMessagePair,
-    AppState, User,
-};
 
 use tokio_stream::StreamExt as TokioStreamExt;
 

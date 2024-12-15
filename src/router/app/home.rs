@@ -1,3 +1,9 @@
+// LOCAL
+use crate::model::{
+    user::User,
+    app_state::AppState
+};
+
 use axum::{
     extract::{Extension, State},
     response::Html,
@@ -6,8 +12,6 @@ use axum::{
 use tera::Context;
 
 use std::sync::Arc;
-
-use crate::{AppState, User};
 
 #[axum::debug_handler]
 pub async fn app(
