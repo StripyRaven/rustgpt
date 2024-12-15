@@ -1,6 +1,9 @@
 // LOCAL
 use crate::model::{
-    user::User,
+    user::{
+        //User,
+        UserNormalized
+    },
     app_state::AppState
 };
 
@@ -75,9 +78,10 @@ const MODELS: [(&str, &str, &str); 5] = [
 ];
 
 #[axum::debug_handler]
+//#[doc = string]
 pub async fn chat(
     State(state): State<Arc<AppState>>,
-    Extension(current_user): Extension<Option<User>>,
+    Extension(current_user): Extension<Option<UserNormalized>>,
 ) -> Html<String> {
     let user_chats = state
         .chat_repo
@@ -111,7 +115,7 @@ pub struct NewChat {
 #[axum::debug_handler]
 pub async fn new_chat(
     State(state): State<Arc<AppState>>,
-    Extension(current_user): Extension<Option<User>>,
+    Extension(current_user): Extension<Option<UserNormalized>>,
     Form(new_chat): Form<NewChat>,
 ) -> Result<Response<String>, ChatError> {
     let current_user = current_user.unwrap();
@@ -146,7 +150,7 @@ struct ParsedMessagePair {
 pub async fn chat_by_id(
     Path(chat_id): Path<i64>,
     State(state): State<Arc<AppState>>,
-    Extension(current_user): Extension<Option<User>>,
+    Extension(current_user): Extension<Option<UserNormalized>>,
 ) -> Result<Html<String>, ChatError> {
     let chat_message_pairs = state
         .chat_repo
@@ -208,7 +212,7 @@ pub struct ChatAddMessage {
 pub async fn chat_add_message(
     Path(chat_id): Path<i64>,
     State(state): State<Arc<AppState>>,
-    Extension(_current_user): Extension<Option<User>>,
+    Extension(_current_user): Extension<Option<UserNormalized>>,
     Form(chat_add_message): Form<ChatAddMessage>,
 ) -> Result<Html<String>, ChatError> {
     let message = chat_add_message.message;
@@ -230,15 +234,14 @@ pub async fn chat_add_message(
 }
 
 pub async fn chat_generate(
-    Extension(current_user): Extension<Option<User>>,
+    Extension(current_user): Extension<Option<UserNormalized>>,
     Path(chat_id): Path<i64>,
     State(state): State<Arc<AppState>>,
 ) -> Result<Sse<impl tokio_stream::Stream<Item = Result<Event, axum::Error>>>, ChatError> {
     let chat_message_pairs = state.chat_repo.retrieve_chat(chat_id).await.unwrap();
     let key = current_user
         .unwrap()
-        .openai_api_key
-        .unwrap_or(String::new());
+        .openai_api_key;
 
     match list_engines(&key).await {
         Ok(_res) => {}

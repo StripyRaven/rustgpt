@@ -8,7 +8,7 @@
 - [Main source](https://github.com/bitswired/rustgpt)
 - [Present fork](https://github.com/StripyRaven/rustgpt)
 
-Welcome to the RustGPT repository! Here, you'll find a web ChatGPT clone entirely crafted using Rust and HTMX, where technology meets simplicity and performance. 🚀
+## Materials
 
 - [Try the RustGPT hosted demo example](https://rustgpt.bitswired.com)
 - [Read the useful blog article](https://www.bitswired.com/en/blog/post/rustgpt-journey-rust-htmx-web-dev)

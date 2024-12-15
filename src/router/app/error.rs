@@ -1,6 +1,9 @@
 // LOCAL
 use crate::model::{
-    user::User,
+    user::{
+        //User,
+        UserNormalized
+    },
     app_state::AppState
 };
 
@@ -24,7 +27,7 @@ pub struct ErrorParams {
 pub async fn error(
     Query(params): Query<ErrorParams>,
     State(state): State<Arc<AppState>>,
-    Extension(current_user): Extension<Option<User>>,
+    Extension(current_user): Extension<Option<UserNormalized>>,
 ) -> Html<String> {
     let mut context = Context::new();
     context.insert("status_code", &params.code);

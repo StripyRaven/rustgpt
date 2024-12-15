@@ -1,7 +1,12 @@
 ///
 /// User & user handlig
 ///
-use chrono::{DateTime, Local, NaiveDate, NaiveDateTime};
+use chrono::{
+    //DateTime,
+    //Local,
+    NaiveDate,
+    NaiveDateTime
+};
 use serde::{Deserialize, Serialize};
 use std::fmt;
 use std::error::Error;

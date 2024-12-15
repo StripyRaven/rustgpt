@@ -25,7 +25,7 @@ use axum::{
         Extension,
     },
 };
-use chrono::NaiveDateTime;
+// use chrono::NaiveDateTime;
 use std::sync::Arc;
 
 use tera::Context;
@@ -97,7 +97,7 @@ where
 /// # Authentication Middleware (`auth`)
 /// This middleware checks if the user is logged in and redirects to an error page if not.
 pub async fn auth<B>(
-    Extension(current_user): Extension<Option<User>>,
+    Extension(current_user): Extension<Option<UserNormalized>>,
     request: Request<Body>,
     next: Next,
 ) -> Response
@@ -117,7 +117,7 @@ where
 }
 
 pub async fn valid_openai_api_key<B>(
-    Extension(current_user): Extension<Option<User>>,
+    Extension(current_user): Extension<Option<UserNormalized>>,
     req: Request<Body>,
     next: Next,
 ) -> Response
@@ -126,8 +126,7 @@ where
 {
     let key = current_user
         .unwrap()
-        .openai_api_key
-        .unwrap_or(String::new());
+        .openai_api_key;
 
     let client = reqwest::Client::new();
     match client
@@ -150,7 +149,7 @@ where
 
 //
 pub async fn handle_error<B>(
-    Extension(current_user): Extension<Option<User>>,
+    Extension(current_user): Extension<Option<UserNormalized>>,
     State(state): State<Arc<AppState>>,
     request: Request<axum::body::Body>,
     next: Next,

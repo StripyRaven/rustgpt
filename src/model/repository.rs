@@ -2,7 +2,11 @@
 use std::sync::Arc;
 
 use sqlx::sqlite::SqlitePool;
-use sqlx::{Row, Sqlite, Transaction};
+use sqlx::{
+    //Row,
+    Sqlite,
+    Transaction
+};
 
 use super::model::{Chat, ChatMessagePair};
 
@@ -176,14 +180,14 @@ mod tests {
 
     #[tokio::test]
     async fn test_create_chat() {
-        let (pool, repo, user_id) = setup().await;
+        let (_pool, repo, user_id) = setup().await;
         let chat = repo.create_chat(user_id, "test", "gpt-4").await;
         assert!(chat.is_ok(), "Failed to create chat");
     }
 
     #[tokio::test]
     async fn test_add_message_block() {
-        let (pool, repo, user_id) = setup().await;
+        let (_pool, repo, user_id) = setup().await;
         let chat = repo.create_chat(user_id, "test", "gpt-4").await;
         assert!(chat.is_ok(), "Failed to create chat");
         let chat_id = chat.unwrap();
@@ -194,7 +198,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_json() {
-        let (pool, repo, user_id) = setup().await;
+        let (_pool, repo, user_id) = setup().await;
         let chat = repo.create_chat(user_id, "test", "gpt-4").await;
         assert!(chat.is_ok(), "Failed to create chat");
         let chat_id = chat.unwrap();
