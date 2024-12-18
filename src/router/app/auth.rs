@@ -1,10 +1,8 @@
 // LOCAL
 use crate::model::{
     app_state::AppState,
-    user::{
-        //User,
-        UserNormalized
-    }
+    // user::UserNormalized,
+    user_dto::UserDTO
 };
 
 use axum::{
@@ -14,6 +12,7 @@ use axum::{
     response::{Html, IntoResponse, Redirect, Response},
     Form, Json,
 };
+
 
 use serde::Deserialize;
 use std::sync::Arc;
@@ -57,30 +56,53 @@ impl IntoResponse for LogInError {
 
 // TODO move to models
 #[derive(Deserialize, Debug)]
-pub struct LogIn {
+pub struct LogInDTO {
     email: String,
     password: String,
 }
+
+
 
 // #[debug_handler]
 pub async fn login_form(
     cookies: Cookies,
     state: State<Arc<AppState>>,
-    Form(log_in): Form<LogIn>,
-) -> Result<Redirect, LogInError> {
+    Form(log_in): Form<LogInDTO>,
+) -> Result<Redirect, LogInError>
+{
     // Verify password
-    let user:UserNormalized = sqlx::query_as!(
-        UserNormalized,
-        "SELECT users.*, settings.openai_api_key FROM users LEFT JOIN settings ON settings.user_id=users.id WHERE users.email = $1",
+    // 5 полей в ответе по базе
+    //id, email, password, created_at, openai_api_key
+    /*  SELECT
+            users.*,
+            settings.openai_api_key
+        FROM users LEFT JOIN settings ON settings.user_id=users.id
+        WHERE users.email = "stripyraven@gmailcom"
+    */
+
+    let user:UserDTO = sqlx::query_as!(
+        UserDTO,
+        "SELECT
+            users.id,
+            users.email,
+            users.password,
+            users.created_at,
+            settings.openai_api_key
+                FROM users
+                LEFT JOIN settings
+                ON settings.user_id=users.id
+            WHERE users.email = $1",
         log_in.email,
-    ).fetch_one(&*state.pool).await
+    )
+    .fetch_one(&*state.pool)
+    .await
     .map_err(|_| LogInError::InvalidCredentials)?;
 
     if user.password != log_in.password {
         return Err(LogInError::InvalidCredentials);
     }
 
-    let cookie: Cookie = Cookie::build(("rust-gpt-session", user.id.to_string()))
+    let cookie: Cookie = Cookie::build(("rust-ai_layer-session", user.id.to_string()))
         // .domain("www.rust-lang.org")
         .path("/")
         // .secure(true)
@@ -124,6 +146,9 @@ impl IntoResponse for SignUpError {
     }
 }
 
+// TODO move to models
+/// # Sign υp
+/// Struct (DTO in C#)
 #[derive(Deserialize, Debug)]
 pub struct SignUp {
     email: String,
@@ -131,11 +156,18 @@ pub struct SignUp {
     password_confirmation: String,
 }
 
+/// # FORM SIGNUP
+/// [!note] By using explicit unwrapping, you can prevent any implicit
+/// conversions that might be causing the issue with the `sqlx::query_as!`
+/// macro. Make sure to apply this change in all relevant places
+/// where `sqlx::query_as!` is used in your codebase.
 #[axum::debug_handler]
 pub async fn form_signup(
     state: State<Arc<AppState>>,
     Form(sign_up): Form<SignUp>,
-) -> Result<Redirect, SignUpError> {
+) -> Result<Redirect, SignUpError>
+{
+
     if sign_up.password != sign_up.password_confirmation {
         return Err(SignUpError::PasswordMismatch);
     }
@@ -150,9 +182,13 @@ pub async fn form_signup(
     .await
     {
         Ok(_) => Ok(Redirect::to("/login")),
-        Err(_e) => {
             // Handle database error, for example, a unique constraint violation
-            Err(SignUpError::DatabaseError("Dat".to_string()))
+        Err(e) => {
+            println!("{}", e);
+            Err(SignUpError::DatabaseError(format!(
+                "An error occurred while trying to sign up: {}",
+                e
+            )))
         }
     }
 }

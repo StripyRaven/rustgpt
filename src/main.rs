@@ -1,5 +1,12 @@
+// LOCAL
+mod project_middleware;
+mod model;
+use model::{
+    app_state,
+    repository::ChatRepository};
 
-mod ai;
+// ETERNA
+mod ai_layer;
 use axum::{
     //extract::RequestParts,
     http::{
@@ -17,13 +24,6 @@ use axum::{
 };
 
 use dotenv;
-mod model;
-use model::{
-    app_state,
-    repository::ChatRepository};
-
-mod middleware;
-// use middleware::extract_user;
 
 // use serde::Serialize;
 mod router;
@@ -32,7 +32,6 @@ use std::{net::SocketAddr, path::Path, sync::Arc, time::Duration};
 use sqlx::{
     migrate::Migrator,
     sqlite::{SqliteConnectOptions, SqlitePoolOptions},
-    //types::chrono::Local,
     //Pool, Sqlite,
 };
 use tera::Tera;
@@ -103,6 +102,11 @@ async fn main() {
     // let jdoom = axum::middleware::from_fn_with_state(shared_app_state.clone(), auth);
 
     // build our application with some routes
+    let var_handel_err = axum::middleware::from_fn_with_state(
+            shared_app_state.clone(),
+            project_middleware::handle_error,
+            );
+
     let app = Router::new()
         // .route(
         //     "/",
@@ -112,14 +116,10 @@ async fn main() {
         .nest_service("/assets", static_files)
         .with_state(shared_app_state.clone())
         .nest("/", app_router(shared_app_state.clone()))
+        .layer(var_handel_err)
         .layer(axum::middleware::from_fn_with_state(
             shared_app_state.clone(),
-            middleware::handle_error,
-            )
-        )
-        .layer(axum::middleware::from_fn_with_state(
-            shared_app_state.clone(),
-            middleware::extract_user,
+            project_middleware::extract_user,
             )
         )
         .layer(CookieManagerLayer::new());
@@ -138,9 +138,16 @@ async fn main() {
 
 /// Utility function for mapping any error into a `500 Internal Server Error`
 /// response.
+// TODO move to error
 fn internal_error<E>(err: E) -> (StatusCode, String)
 where
     E: std::error::Error,
 {
     (StatusCode::INTERNAL_SERVER_ERROR, err.to_string())
 }
+
+/*
+enum TracingError {
+    B,
+}
+*/

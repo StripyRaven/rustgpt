@@ -9,6 +9,8 @@ edition = "2021"
 [dependencies]
 axum = { version = "0.7.9", features = ["macros"] }
 axum-server = "0.7.1"
+# https://crates.io/crates/bcrypt
+bcrypt ="0.16.0"
 chrono = { version = "^0.4.39", features = ["serde"] }
 comrak = "0.31.0"
 dotenv = "0.15.0"
@@ -19,7 +21,7 @@ reqwest = { version = "0.12.9", features = ["json"] }
 reqwest-eventsource = "0.6.0"
 serde = {version = "1", features = ["derive"]}
 serde_json = "1.0"
-sqlx = { version = "0.7.0", features = ["sqlite", "runtime-async-std-native-tls", "runtime-tokio", "chrono", "json"] }
+sqlx = { version = "0.7.0", features = ["chrono", "json", "runtime-async-std-native-tls", "runtime-tokio", "sqlite"] }
 sqlx-migrate = "^0.7.1"
 tera = "1.19.1"
 time = ">= 0.3.35"

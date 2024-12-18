@@ -1,17 +1,37 @@
 # Rust_AI
 ## Useeful
 
+### Error Code
+
 - [RUST erroe code index](https://doc.rust-lang.org/error_codes/error-index.html)
+```sh
+rustc --explain E0277
+```
 
 ## Sources
 
-- [Main source](https://github.com/bitswired/rustgpt)
+- [Primary Main source](https://github.com/bitswired/rustgpt)
 - [Present fork](https://github.com/StripyRaven/rustgpt)
 
 ## Materials
 
+### RUST
+
+- [A large cheat sheet on Rust 1/2.](https://habr.com/ru/companies/timeweb/articles/785096/)
+- [A large cheat sheet on Rust 2/2.](https://habr.com/ru/companies/timeweb/articles/787924/)
 - [Try the RustGPT hosted demo example](https://rustgpt.bitswired.com)
 - [Read the useful blog article](https://www.bitswired.com/en/blog/post/rustgpt-journey-rust-htmx-web-dev)
+
+### Sqlx
+
+- [SQLite docs](https://www.sqlite.org/docs.html)
+- [Sqlx-cli](https://github.com/launchbadge/sqlx/blob/main/sqlx-cli/README.md)
+- [Sqlx quary_as!](https://docs.rs/sqlx/latest/sqlx/macro.query_as.html)
+- [Useful habr](https://habr.com/ru/companies/otus/articles/771288/)
+
+### Axum
+
+- [Axum doc](https://crates.io/crates/axum)
 
 ## Introduction
 

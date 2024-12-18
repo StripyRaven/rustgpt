@@ -1,7 +1,7 @@
 
 // Locals
 use crate::{
-    middleware::valid_openai_api_key,
+    project_middleware::valid_openai_api_key,
     model::app_state::AppState
 };
 
@@ -15,7 +15,7 @@ use std::sync::Arc;
 mod home;
 use home::app;
 mod auth;
-use chat::{chat, chat_add_message, chat_by_id, chat_generate, delete_chat, new_chat};
+use chat::{chat, chat_add_message, chat_by_id, generate_chat, delete_chat, new_chat};
 use auth::{form_signup, login, login_form, logout, signup};
 mod blog;
 use blog::{blog, blog_by_slug};
@@ -25,14 +25,14 @@ use settings::{settings, settings_openai_api_key};
 mod error;
 use error::error;
 
-use crate::middleware::auth;
+use crate::project_middleware::auth;
 
 pub fn app_router(state: Arc<AppState>) -> Router {
     let chat_router = Router::new()
         .route("/", get(chat).post(new_chat))
         .route("/:id", get(chat_by_id).delete(delete_chat))
         .route("/:id/message/add", post(chat_add_message))
-        .route("/:id/generate", get(chat_generate))
+        .route("/:id/generate", get(generate_chat))
         .with_state(state.clone())
         .layer(axum::middleware::from_fn(valid_openai_api_key))
         .layer(axum::middleware::from_fn(auth));
