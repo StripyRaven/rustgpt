@@ -80,7 +80,8 @@ pub async fn login_form(
         WHERE users.email = "stripyraven@gmailcom"
     */
 
-    let user:UserDTO = sqlx::query_as!(
+    //getting user fron db
+    let user_db:UserDTO = sqlx::query_as!(
         UserDTO,
         "SELECT
             users.id,
@@ -98,11 +99,11 @@ pub async fn login_form(
     .await
     .map_err(|_| LogInError::InvalidCredentials)?;
 
-    if user.password != log_in.password {
+    if user_db.password != log_in.password {
         return Err(LogInError::InvalidCredentials);
     }
 
-    let cookie: Cookie = Cookie::build(("rust-ai_layer-session", user.id.to_string()))
+    let cookie: Cookie = Cookie::build(("rust-ai_layer-session", user_db.id.to_string()))
         // .domain("www.rust-lang.org")
         .path("/")
         // .secure(true)

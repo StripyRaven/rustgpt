@@ -1,12 +1,4 @@
 # Rust_AI
-## Useeful
-
-### Error Code
-
-- [RUST erroe code index](https://doc.rust-lang.org/error_codes/error-index.html)
-```sh
-rustc --explain E0277
-```
 
 ## Sources
 
@@ -21,17 +13,40 @@ rustc --explain E0277
 - [A large cheat sheet on Rust 2/2.](https://habr.com/ru/companies/timeweb/articles/787924/)
 - [Try the RustGPT hosted demo example](https://rustgpt.bitswired.com)
 - [Read the useful blog article](https://www.bitswired.com/en/blog/post/rustgpt-journey-rust-htmx-web-dev)
+- [Some useful](https://habr.com/ru/articles/714980/)
+- [By example](https://doc.rust-lang.ru/stable/rust-by-example/index.html)
+
+#### Error Code
+
+- [RUST erroe code index](https://doc.rust-lang.org/error_codes/error-index.html)
+```sh:example
+rustc --explain E0277
+```
 
 ### Sqlx
 
 - [SQLite docs](https://www.sqlite.org/docs.html)
 - [Sqlx-cli](https://github.com/launchbadge/sqlx/blob/main/sqlx-cli/README.md)
 - [Sqlx quary_as!](https://docs.rs/sqlx/latest/sqlx/macro.query_as.html)
+- [Sqlite datatypes](https://docs.rs/sqlx/latest/sqlx/sqlite/types/index.html)
 - [Useful habr](https://habr.com/ru/companies/otus/articles/771288/)
 
 ### Axum
 
 - [Axum doc](https://crates.io/crates/axum)
+- [Eamples](https://github.com/tokio-rs/axum/tree/main/examples)
+- [Showcases](https://github.com/tokio-rs/axum/blob/main/ECOSYSTEM.md#project-showcase)
+- [Tutorials](https://github.com/tokio-rs/axum/blob/main/ECOSYSTEM.md#tutorials)
+- [Community projects](https://github.com/tokio-rs/axum/blob/main/ECOSYSTEM.md)
+****
+- [more example](https://codevoweb.com/rust-crud-api-example-with-axum-and-postgresql/)
+
+### Acc & Mutex
+- [Arc and Mutex in Rust](https://itsallaboutthebit.com/arc-mutex/)
+
+### HTTP
+
+- [status code registry](https://www.iana.org/assignments/http-status-codes/http-status-codes.xhtml)
 
 ## Introduction
 

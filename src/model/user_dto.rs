@@ -3,6 +3,9 @@
 /// crate for representing a date and time without any reference
 /// to a specific timezone.
 /// It contains information about the year, month, day, hour, minute, second, and microsecond.
+//-----------------------------------------------------------------------------
+// Local
+//-----------------------------------------------------------------------------
 use chrono::{
     // DateTime,
     // Local,
@@ -14,9 +17,8 @@ use chrono::{
 };
 use serde::{Deserialize, Serialize};
 
-///
 /// # UserDTO
-/// for db mapping on auth and transfering
+/// model for for db mapping on auth and transfering
 ///
 /// - [Local](https://docs.rs/chrono/latest/chrono/offset/struct.Local.html)
 #[derive(Clone, Debug, Serialize, Deserialize, sqlx::FromRow)]
@@ -30,9 +32,57 @@ pub struct UserDTO {
     pub openai_api_key: Option<String>,
 }
 
-pub fn get_open_ai_api_key<'a>(u: &Option<UserDTO>) ->&str{
-    let key: &str = u.as_ref()
-        .and_then(|user| user.openai_api_key.as_deref())
-        .unwrap_or(""); // if Some - ok if None = "" (empty)
-    key
+///////////////////////////////////////////////////////////////////////////////
+
+impl UserDTO {
+    /// # GET OPENAI API KEY
+    /// getting `UserDTO` and extract from `Option<<Option<String>>
+    /// - OK -> Key
+    /// - Err -> no `user` og no `key`
+    /// - Note: Result as `String`
+    /// - note: to be matcheable with db types
+    /// - TODO collect types as ENUM enum {CHAT, MIDDLEWARE, DB .... etc}
+    /// - [Sqlx::Sqlite datatypes](https://docs.rs/sqlx/latest/sqlx/sqlite/types/index.html)
+    pub fn get_open_ai_api_key(&self) -> Result<String, String> {
+        match &self.openai_api_key {
+            Some(key) => Ok(key.to_string()),
+            None => Err("400, key wrong or not exist".to_string()),
+        }
+    }
+
+    /// # GET OPENAI API KEY FROM OPTION
+    /// This method is intended to handle the case where you have an `Option<UserDTO>`
+    /// and need to extract the open AI API key.
+    ///## Examples
+    ///```rs
+    ///struct UserDTO {
+    ///     openai_api_key: Option<String>,
+    /// }
+    ///
+    /// fn main() {
+    ///     let user = UserDTO {
+    ///         openai_api_key: Some("your_api_key".to_string())
+    ////     };
+    ///
+    ///    match user.get_open_ai_api_key() {
+    ///         Ok(key) => println!("OpenAI API Key: {}", key),
+    ///         Err(e) => println!("Error: {}", e),
+    ///     }
+    ///
+    ///     let opt_user: Option<&UserDTO> = Some(&user);
+    ///
+    ///     match UserDTO::get_open_ai_api_key_fm_option(opt_user) {
+    ///         Ok(key) => println!("OpenAI API Key from Option: {}", key),
+    ///         Err(e) => println!("Error: {}", e),
+    ///     }
+    /// }
+    /// ```
+    ///
+    pub fn get_open_ai_api_key_fm_option(opt: Option<&Self>) -> Result<String, String> {
+        match opt {
+            Some(user) => user.get_open_ai_api_key(),
+            None => Err("400, user wrong or not exist".to_string()),
+        }
+    }
 }
+///////////////////////////////////////////////////////////////////////////////

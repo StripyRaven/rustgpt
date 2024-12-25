@@ -1,20 +1,18 @@
 ///
 /// User & user handlig
 ///
-
 //Local
 // use super::constant;
 // use super::user_dto::UserDTO;
 use super::project_error::UserValidationError;
-
 use chrono::{
     //DateTime,
     NaiveDate,
     NaiveDateTime,
 };
 use serde::{Deserialize, Serialize};
-use std::fmt;
 use std::error::Error;
+use std::fmt;
 // use sqlx::FromRow;
 
 /// User with status and description with optional fields
@@ -48,15 +46,17 @@ pub fn verify_email(user_email: Option<String>) -> Result<String, UserValidation
             } else {
                 Err(UserValidationError::InvalidEmailFormat)
             }
-        },
+        }
         None => Err(UserValidationError::MissingEmail),
     }
 }
 
-
 fn get_created_at(user: &User) -> NaiveDateTime {
     match user.created_at {
         Some(dt) => dt,
-        None => NaiveDate::from_ymd_opt(1900, 1, 1).unwrap().and_hms_opt(0, 0, 0).unwrap(),
+        None => NaiveDate::from_ymd_opt(1900, 1, 1)
+            .unwrap()
+            .and_hms_opt(0, 0, 0)
+            .unwrap(),
     }
 }

@@ -36,6 +36,6 @@ tracing-subscriber = { version = "0.3.17", features = ["env-filter"] }
 opt-level = 3
 lto = true
 rpath = false
-incremental = false
+incremental = true
 overflow-checks = false
 strip = "symbols"

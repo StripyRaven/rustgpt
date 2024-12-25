@@ -1,40 +1,34 @@
 // LOCAL
-use crate::model::{
-    user_dto,
-    user_dto::UserDTO,
-    app_state::AppState
-};
+use crate::model::{app_state::AppState, project_error::ErrorMessage, user_dto, user_dto::UserDTO};
 
 use crate::{
     ai_layer::stream::{generate_sse_stream, list_engines, GenerationEvent},
     model::model::ChatMessagePair,
 };
-
+// EXTERNAL
 use axum::{
-    extract::{
-        Extension,
-        Path,
-        State
-    },
+    //debug_hendler,
+    extract::{Extension, Path, State},
     http::StatusCode,
     response::{sse::Event, Html, IntoResponse, Response, Sse},
-    Form, Json,
+    Form,
+    Json,
 };
 
 use futures::stream::{self};
 use serde::{Deserialize, Serialize};
-use std::sync::Arc;
+use std::sync::{Arc, Mutex};
 use tera::Context;
 use tokio::sync::mpsc;
 use tokio_stream::wrappers::ReceiverStream; // This brings the necessary stream combinators into scope
-
-
 
 use tokio_stream::StreamExt as TokioStreamExt;
 
 pub enum ChatError {
     Other,
     InvalidAPIKey,
+    EmptyKey,
+    NoneObject,
 }
 // Implement Display for ChatError to provide user-facing error messages.
 
@@ -44,6 +38,12 @@ impl IntoResponse for ChatError {
             ChatError::Other => (StatusCode::BAD_REQUEST, Json("Chat Errror")).into_response(),
             ChatError::InvalidAPIKey => {
                 (StatusCode::UNAUTHORIZED, Json("Chat Errror")).into_response()
+            }
+            ChatError::EmptyKey => {
+                (StatusCode::UNAUTHORIZED, Json("None Key Chat Error")).into_response()
+            }
+            ChatError::NoneObject => {
+                (StatusCode::UNAUTHORIZED, Json("None Object Chat Error")).into_response()
             }
         }
     }
@@ -57,11 +57,7 @@ const MODELS: [(&str, &str, &str); 5] = [
         "gpt-4-1106-preview",
         "This is the preview version of the GPT-4 model.",
     ),
-    (
-        "GPT-4",
-        "gpt-4",
-        "Latest generation GPT-4 model."
-    ),
+    ("GPT-4", "gpt-4", "Latest generation GPT-4 model."),
     (
         "GPT-3.5-16K",
         "gpt-3.5-turbo-16k",
@@ -83,13 +79,11 @@ const MODELS: [(&str, &str, &str); 5] = [
 //#[doc = string]
 pub async fn chat(
     State(state): State<Arc<AppState>>,
-    Extension(current_user_data
-    ): Extension<Option<UserDTO>>,
+    Extension(current_user_data): Extension<Option<UserDTO>>,
 ) -> Html<String> {
     let user_chats = state
         .chat_repo
-        .get_all_chats(current_user_data
-            .as_ref().unwrap().id)
+        .get_all_chats(current_user_data.as_ref().unwrap().id)
         .await
         .unwrap();
 
@@ -103,8 +97,10 @@ pub async fn chat(
 
     let mut context = Context::new();
     context.insert("view", &home);
-    context.insert("current_user_data
-        ", &current_user_data
+    context.insert(
+        "current_user_data
+        ",
+        &current_user_data,
     );
     let rendered = state.tera.render("views/main.html", &context).unwrap();
 
@@ -121,18 +117,14 @@ pub struct NewChat {
 #[axum::debug_handler]
 pub async fn new_chat(
     State(state): State<Arc<AppState>>,
-    Extension(current_user_data
-    ): Extension<Option<UserDTO>>,
+    Extension(current_user_data): Extension<Option<UserDTO>>,
     Form(new_chat): Form<NewChat>,
 ) -> Result<Response<String>, ChatError> {
-    let current_user_data
-        = current_user_data
-            .unwrap();
+    let current_user_data = current_user_data.unwrap();
 
     let chat_id = state
         .chat_repo
-        .create_chat(current_user_data
-            .id, &new_chat.message, &new_chat.model)
+        .create_chat(current_user_data.id, &new_chat.message, &new_chat.model)
         .await
         .map_err(|_| ChatError::Other)?;
 
@@ -160,8 +152,7 @@ struct ParsedMessagePair {
 pub async fn chat_by_id(
     Path(chat_id): Path<i64>,
     State(state): State<Arc<AppState>>,
-    Extension(current_user_data
-    ): Extension<Option<UserDTO>>,
+    Extension(current_user_data): Extension<Option<UserDTO>>,
 ) -> Result<Html<String>, ChatError> {
     let chat_message_pairs = state
         .chat_repo
@@ -171,8 +162,7 @@ pub async fn chat_by_id(
 
     let user_chats = state
         .chat_repo
-        .get_all_chats(current_user_data
-            .as_ref().unwrap().id)
+        .get_all_chats(current_user_data.as_ref().unwrap().id)
         .await
         .unwrap();
 
@@ -209,14 +199,13 @@ pub async fn chat_by_id(
 
     let mut context = Context::new();
     context.insert("view", &home);
-    context.insert("current_user_data
-        ", &current_user_data
-    );
+    context.insert("current_user_data", &current_user_data);
     let rendered = state.tera.render("views/main.html", &context).unwrap();
 
     Ok(Html(rendered))
 }
 
+// TODO move to modeels
 #[derive(Deserialize, Debug)]
 pub struct ChatAddMessage {
     message: String,
@@ -227,8 +216,7 @@ pub struct ChatAddMessage {
 pub async fn chat_add_message(
     Path(chat_id): Path<i64>,
     State(state): State<Arc<AppState>>,
-    Extension(_current_user_data
-    ): Extension<Option<UserDTO>>,
+    Extension(_current_user_data): Extension<Option<UserDTO>>,
     Form(chat_add_message): Form<ChatAddMessage>,
 ) -> Result<Html<String>, ChatError> {
     let message = chat_add_message.message;
@@ -249,18 +237,23 @@ pub async fn chat_add_message(
     Ok(Html(update))
 }
 
+#[axum::debug_handler]
 pub async fn generate_chat(
-    Extension(current_user_data): Extension<Option<UserDTO>>,
+    Extension(current_user): Extension<Option<UserDTO>>,
     Path(chat_id): Path<i64>,
     State(state): State<Arc<AppState>>,
 ) -> Result<Sse<impl tokio_stream::Stream<Item = Result<Event, axum::Error>>>, ChatError> {
     let chat_message_pairs = state.chat_repo.retrieve_chat(chat_id).await.unwrap();
-
-    let key: &str = user_dto::get_open_ai_api_key(&current_user_data);
+    let key = current_user // нетт проверок но и нет заимствований срока жизни
+        .unwrap()
+        .openai_api_key
+        .unwrap_or(String::new());
 
     match list_engines(&key).await {
-        Ok(_res) => {},
-        Err(_) => return Err(ChatError::InvalidAPIKey)
+        Ok(_res) => {}
+        Err(_) => {
+            return Err(ChatError::InvalidAPIKey);
+        }
     };
 
     let lat_message_id = chat_message_pairs.last().unwrap().id;

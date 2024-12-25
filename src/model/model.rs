@@ -10,6 +10,7 @@ pub struct Chat {
 }
 
 #[derive(Debug, Serialize, Deserialize, FromRow, Clone)]
+//#[axum::debug_handler]
 pub struct ChatMessagePair {
     pub id: i64,
     pub model: String,

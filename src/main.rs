@@ -1,11 +1,11 @@
 // LOCAL
-mod project_middleware;
 mod model;
-use model::{
-    app_state,
-    repository::ChatRepository};
+mod project_middleware;
+use model::{app_state, repository::ChatRepository};
+mod router;
+use router::app::app_router::app_router;
 
-// ETERNA
+// EXTERNAL
 mod ai_layer;
 use axum::{
     //extract::RequestParts,
@@ -15,9 +15,9 @@ use axum::{
         //Request
     },
     //response::{
-        //IntoResponse,
-        //Response,
-        //},
+    //IntoResponse,
+    //Response,
+    //},
     Router,
     //routing::get,
     //extract::State,
@@ -26,14 +26,14 @@ use axum::{
 use dotenv;
 
 // use serde::Serialize;
-mod router;
-use router::app_router;
-use std::{net::SocketAddr, path::Path, sync::Arc, time::Duration};
+
+use crate::model::app_state::AppState;
 use sqlx::{
     migrate::Migrator,
     sqlite::{SqliteConnectOptions, SqlitePoolOptions},
     //Pool, Sqlite,
 };
+use std::{net::SocketAddr, path::Path, sync::Arc, time::Duration};
 use tera::Tera;
 use tower_cookies::CookieManagerLayer;
 use tower_http::services::ServeDir;
@@ -99,13 +99,11 @@ async fn main() {
 
     let shared_app_state = Arc::new(state);
 
-    // let jdoom = axum::middleware::from_fn_with_state(shared_app_state.clone(), auth);
-
     // build our application with some routes
     let var_handel_err = axum::middleware::from_fn_with_state(
-            shared_app_state.clone(),
-            project_middleware::handle_error,
-            );
+        shared_app_state.clone(),
+        project_middleware::handle_error::<()>,
+    );
 
     let app = Router::new()
         // .route(
@@ -115,13 +113,12 @@ async fn main() {
         // Use `merge` to combine routers
         .nest_service("/assets", static_files)
         .with_state(shared_app_state.clone())
-        .nest("/", app_router(shared_app_state.clone()))
+        .nest("/", app_router::<()>(shared_app_state.clone()))
         .layer(var_handel_err)
         .layer(axum::middleware::from_fn_with_state(
             shared_app_state.clone(),
-            project_middleware::extract_user,
-            )
-        )
+            project_middleware::extract_user::<()>,
+        ))
         .layer(CookieManagerLayer::new());
 
     // run it with hyper
@@ -139,6 +136,7 @@ async fn main() {
 /// Utility function for mapping any error into a `500 Internal Server Error`
 /// response.
 // TODO move to error
+// there is no refs in project
 fn internal_error<E>(err: E) -> (StatusCode, String)
 where
     E: std::error::Error,

@@ -24,6 +24,7 @@ struct ModelList {
     data: Vec<Model>,
 }
 
+/// Param api_key: &str
 pub async fn list_engines(api_key: &str) -> Result<Vec<Model>, reqwest::Error> {
     let client = reqwest::Client::new();
     let res: ModelList = client
