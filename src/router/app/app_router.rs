@@ -8,7 +8,7 @@ use super::chat::{chat, chat_add_message, chat_by_id, delete_chat, generate_chat
 use super::error::error;
 use super::home::app;
 use super::settings::{settings, settings_openai_api_key};
-use crate::model::{app_state::AppState, project_error::ErrorMessage};
+use crate::model::app_state::AppState;
 use crate::project_middleware::{auth, valid_openai_api_key};
 
 /////////////////////////////////////////////////////////////////////

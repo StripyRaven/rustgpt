@@ -1,5 +1,5 @@
 // LOCAL
-use crate::model::{app_state::AppState, project_error::ErrorMessage, user_dto, user_dto::UserDTO};
+use crate::model::{app_state::AppState, user_dto::UserDTO};
 
 use crate::{
     ai_layer::stream::{generate_sse_stream, list_engines, GenerationEvent},
@@ -17,7 +17,7 @@ use axum::{
 
 use futures::stream::{self};
 use serde::{Deserialize, Serialize};
-use std::sync::{Arc, Mutex};
+use std::sync::Arc;
 use tera::Context;
 use tokio::sync::mpsc;
 use tokio_stream::wrappers::ReceiverStream; // This brings the necessary stream combinators into scope

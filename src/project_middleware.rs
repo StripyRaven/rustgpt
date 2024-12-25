@@ -1,5 +1,5 @@
 /// LOCAL
-use crate::model::{app_state::AppState, project_error::ErrorMessage, user_dto, user_dto::UserDTO};
+use crate::model::{app_state::AppState, project_error::ErrorMessage, user_dto::UserDTO};
 
 use axum::{
     body::Body,

@@ -27,7 +27,6 @@ use dotenv;
 
 // use serde::Serialize;
 
-use crate::model::app_state::AppState;
 use sqlx::{
     migrate::Migrator,
     sqlite::{SqliteConnectOptions, SqlitePoolOptions},
@@ -132,20 +131,3 @@ async fn main() {
         .await
         .unwrap();
 }
-
-/// Utility function for mapping any error into a `500 Internal Server Error`
-/// response.
-// TODO move to error
-// there is no refs in project
-fn internal_error<E>(err: E) -> (StatusCode, String)
-where
-    E: std::error::Error,
-{
-    (StatusCode::INTERNAL_SERVER_ERROR, err.to_string())
-}
-
-/*
-enum TracingError {
-    B,
-}
-*/

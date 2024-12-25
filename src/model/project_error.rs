@@ -24,7 +24,6 @@ use axum::{
     },
 };
 //use http::status::StatusCode; // containeed in axum
-use serde::Deserialize;
 
 // --------------------------------------------------------
 /// ERROR IN USE
@@ -129,8 +128,11 @@ impl IntoResponse for ApiError {
     //     }
 }
 
+/// Utility function for mapping any error into a `500 Internal Server Error`response
 // TODO should use ErrorMessage
 // TODO consder merge to `ErrorMessage` and `std::error::Error`
+// there is no refs in project
+//
 fn internal_server_error<E>(err: E) -> (StatusCode, String)
 where
     E: std::error::Error,
