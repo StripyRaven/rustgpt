@@ -29,7 +29,7 @@ use std::sync::Arc; // Sqlx use Arq, check via tree
 
 use tera::Context;
 use tower_cookies::Cookies;
-use tracing::info;
+use tracing::{debug, info};
 
 /// # Extract user.
 /// The `extract_user` function attempts to parse the user ID from cookies
@@ -47,7 +47,7 @@ pub async fn extract_user<B>(
 where
     B: Send + 'static,
 {
-    tracing::info!("Start");
+    tracing::debug!("Start - extract_user");
     let session = cookies.get("rust-AI-session");
 
     let id: i64 = match session {
@@ -57,7 +57,7 @@ where
             .map_err(|_| StatusCode::BAD_REQUEST)?,
         None => -1,
     };
-
+    tracing::debug!("user id: {}", &id);
     // Get the user - turn to function
     match sqlx::query_as!(
         UserDTO,
@@ -80,6 +80,7 @@ where
         }
         // Ok(None) => TODO to be None Option<UserDTO>
         Ok(None) | Err(SqlError::RowNotFound) => {
+            tracing::debug!("current user is Nono {}", &id);
             // Handle specific error case for missing user
             req.extensions_mut().insert(None::<UserDTO>);
             // insert the current user into a request extension, so the handler can
@@ -179,11 +180,14 @@ pub async fn handle_error<B>(
 where
     B: Send + 'static,
 {
-    info!("Start");
+    tracing::debug!("Start - handle error");
+
     let response = next.run(request).await;
 
     let status_code = response.status().as_u16();
     let status_text = response.status().as_str().to_string();
+
+    tracing::debug!("satus code: {}", status_code);
 
     match status_code {
         _ if status_code >= 400 => {

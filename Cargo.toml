@@ -32,19 +32,6 @@ tower-http = { version = "0.6.2", features = ["cors", "fs"] }
 tracing = "0.1.40"
 tracing-subscriber = { version = "0.3.17", features = ["env-filter", "fmt"] }
 
-[profile.dev]
-opt-level = 0
-debug = "full"
-split-debuginfo = "..." # Platform-specific.
-strip = "symbols"
-debug-assertions = true
-overflow-checks = false
-lto = "thin"
-panic = 'unwind'
-incremental = true
-codegen-units = 256
-rpath = false
-
 [profile.release]
 opt-level = 3
 lto = true

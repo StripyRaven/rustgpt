@@ -11,7 +11,7 @@ dev-server:
 	cargo watch -w src -w templates -w tailwind.config.js -w input.css -x run
 
 dev-server-debug:
-	cargo watch -w src -w templates -w tailwind.config.js -w input.css -x run
+	cargo watch --clear --no-restart -w src -w templates -w tailwind.config.js -w input.css -x run
 
 dev-tailwind:
 	./tailwindcss/tailwindcss -i input.css -o assets/output.css --watch=always
@@ -38,8 +38,8 @@ dev:
 	just dev-server &
 	pid2=$!
 	trap "kill $pid1 $pid2" EXIT
-	open http://0.0.0.0:3001
 	wait $pid1 $pid2
+	open http://0.0.0.0:3001
 
 dev-debug:
 	#!/bin/sh
@@ -52,6 +52,10 @@ dev-debug:
 	open http://0.0.0.0:3000
 
 clean:
-    cargo updete -vv
+    cargo update -vv
     cargo clean
     cargo build --release
+
+commit:
+    git add .
+    git commit -m "Add new feature"
