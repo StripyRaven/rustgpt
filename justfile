@@ -38,8 +38,8 @@ dev:
 	just dev-server &
 	pid2=$!
 	trap "kill $pid1 $pid2" EXIT
-	wait $pid1 $pid2
 	open http://0.0.0.0:3001
+	wait $pid1 $pid2
 
 dev-debug:
 	#!/bin/sh
@@ -50,3 +50,8 @@ dev-debug:
 	trap "kill $pid1 $pid2" EXIT
 	wait $pid1 $pid2
 	open http://0.0.0.0:3000
+
+clean:
+    cargo updete -vv
+    cargo clean
+    cargo build --release

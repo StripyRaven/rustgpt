@@ -1,3 +1,4 @@
+#![allow(dead_code)]
 // LOCAL
 use crate::model::{app_state::AppStateProject, project_error::ErrorMessage, user_dto::UserDTO};
 
@@ -8,6 +9,7 @@ use axum::{
 //use serde::Deserialize;
 use std::sync::Arc;
 use tera::Context;
+use tracing::info;
 
 //#[axum::debug_handler]
 pub async fn error(
@@ -15,6 +17,7 @@ pub async fn error(
     State(state): State<Arc<AppStateProject>>,
     Extension(current_user): Extension<Option<UserDTO>>,
 ) -> Html<String> {
+    tracing::info!("Start");
     let err_tmp: &str = "views/error.html";
 
     let mut context = Context::new();

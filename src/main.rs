@@ -24,22 +24,25 @@ use tera::Tera;
 use tower_cookies::CookieManagerLayer;
 use tower_http::services::ServeDir;
 use tracing::{error, info};
-use tracing_subscriber::{layer::SubscriberExt, prelude::*, util::SubscriberInitExt};
+use tracing_subscriber::{fmt, layer::SubscriberExt, prelude::*, util::SubscriberInitExt};
 
 ///////////////////////////////////////////////////////////////////////////////
 // MAIN
 ///////////////////////////////////////////////////////////////////////////////
 
+/// - [Tracinng](https://www.shuttle.dev/blog/2024/01/09/getting-started-tracing-rust)
 #[tokio::main]
 async fn main() {
     dotenv::dotenv().ok();
-    // - [Tracinng](https://www.shuttle.dev/blog/2024/01/09/getting-started-tracing-rust)
-    tracing_subscriber::registry()
-        .with(
-            tracing_subscriber::EnvFilter::try_from_default_env()
-                .unwrap_or_else(|_| "example_tokio_postgres=debug".into()),
-        )
-        .with(tracing_subscriber::fmt::layer())
+
+    tracing_subscriber::fmt()
+        .pretty()
+        //registry()
+        // .with(
+        //     tracing_subscriber::EnvFilter::try_from_default_env()
+        //         .unwrap_or_else(|_| "example_tokio_postgres=debug".into()),
+        // )
+        // .with(tracing_subscriber::fmt::layer())
         .init();
     info!("Application starting");
 
@@ -64,6 +67,8 @@ async fn main() {
 
     // Run the migrations.
     migrator.run(&pool).await.unwrap();
+
+    info!("db init done");
 
     let pool = Arc::new(pool);
 
@@ -93,6 +98,8 @@ async fn main() {
         // handle error
         project_middleware::handle_error::<()>,
     );
+
+    info!("set up done - getting router");
 
     let app = Router::new()
         // .route(
@@ -125,16 +132,19 @@ async fn main() {
 
     tracing::debug!("listening on {}", socket_addr);
 
-    // https://crates.io/crates/axum-server
     // **Identify the Process Using the Port**:
     //   You can use tools like `lsof` (on Unix-like systems) or `netstat`/`ss` (also on Unix-like systems) to find out which process is using the port.
     //```sh
     // lsof -i :3000
     // ```
-    axum_server::bind(socket_addr)
+    // `Err` value: Os { code: 48, kind: AddrInUse, message: "Address already in use" }
+    match axum_server::bind(socket_addr)
         .serve(app.into_make_service())
         .await
-        .unwrap(); //("some error o start");
-                   // `Err` value: Os { code: 48, kind: AddrInUse, message: "Address already in use" }
+    {
+        Ok(_) => tracing::info!("Server started on {}", socket_addr),
+        Err(e) => tracing::error!("Failed to start server: {}", e),
+    };
+
     error!("tracing: An error occurred");
 }

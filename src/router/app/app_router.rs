@@ -24,12 +24,13 @@ use axum::{
 };
 
 use std::sync::Arc;
-use tracing::error;
+use tracing::{error, info};
 
 pub fn app_router<B>(state: Arc<AppStateProject>) -> Router
 where
     B: Send + 'static,
 {
+    info!("Start");
     let chat_router = Router::new()
         .route("/", get(chat).post(new_chat))
         .route("/:id", get(chat_by_id).delete(delete_chat))
@@ -61,7 +62,7 @@ pub async fn catch_errors<B>(req: Request<body>, next: Next) -> impl IntoRespons
     let response = next.run(req).await;
 
     if !response.status().is_success() {
-        error!("Error occurred: {:?}", response);
+        tracing::error!("Error occurred: {:?}", response);
     }
 
     response

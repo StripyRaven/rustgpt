@@ -33,12 +33,12 @@ tracing = "0.1.40"
 tracing-subscriber = { version = "0.3.17", features = ["env-filter", "fmt"] }
 
 [profile.dev]
-opt-level = 1
+opt-level = 0
 debug = "full"
-split-debuginfo = "unpacked" # Platform-specific.
+split-debuginfo = "..." # Platform-specific.
 strip = "symbols"
 debug-assertions = true
-overflow-checks = true
+overflow-checks = false
 lto = "thin"
 panic = 'unwind'
 incremental = true
@@ -49,7 +49,7 @@ rpath = false
 opt-level = 3
 lto = true
 rpath = false
-incremental = true
+incremental = false
 overflow-checks = false
 strip = "symbols"
 

@@ -1,3 +1,5 @@
+#![allow(dead_code)]
+
 use super::repository::ChatRepository;
 use sqlx::{Pool, Sqlite};
 use std::sync::{Arc, Mutex};
