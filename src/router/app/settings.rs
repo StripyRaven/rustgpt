@@ -1,7 +1,7 @@
 // LOCAL
 use crate::model::{
     user::User,
-    app_state::AppState
+    app_state::AppStateProject
 };
 
 use axum::{
@@ -24,7 +24,7 @@ pub struct OpenAiAPIKey {
 
 #[axum::debug_handler]
 pub async fn settings_openai_api_key(
-    State(state): State<Arc<AppState>>,
+    State(state): State<Arc<AppStateProject>>,
     Extension(current_user): Extension<Option<User>>,
     Form(set_openai_api_key): Form<OpenAiAPIKey>,
 ) -> Result<Redirect, StatusCode> {
@@ -41,7 +41,7 @@ pub async fn settings_openai_api_key(
 
 #[axum::debug_handler]
 pub async fn settings(
-    State(state): State<Arc<AppState>>,
+    State(state): State<Arc<AppStateProject>>,
     Extension(current_user): Extension<Option<User>>,
 ) -> Result<Html<String>, StatusCode> {
     let key = current_user.as_ref().unwrap().openai_api_key.as_ref();

@@ -1,5 +1,5 @@
 /// LOCAL
-use crate::model::{app_state::AppState, project_error::ErrorMessage, user_dto::UserDTO};
+use crate::model::{app_state::AppStateProject, project_error::ErrorMessage, user_dto::UserDTO};
 
 use axum::{
     body::Body,
@@ -23,6 +23,7 @@ use axum::{
     },
 };
 //use::future::Future;
+use tracing;
 
 use sqlx::Error as SqlError;
 use std::sync::Arc; // Sqlx use Arq, check via tree
@@ -38,7 +39,7 @@ use tower_cookies::Cookies;
 
 // TODO split into two part SQL requst and assertion
 pub async fn extract_user<B>(
-    State(state): State<Arc<AppState>>,
+    State(state): State<Arc<AppStateProject>>,
     cookies: Cookies,
     mut req: Request<Body>,
     next: Next,
@@ -69,14 +70,15 @@ where
     .fetch_optional(&*state.pool)
     .await
     {
-        Ok(current_user) => {
+        Ok(Some(current_user)) => {
             // insert the current user into a request extension, so the handler can
             // extract it, and make sure `user` is not used after this point.
-            req.extensions_mut().insert(Some(current_user));
+            req.extensions_mut().insert(current_user);
             //next.run(req).await
             Ok(next.run(req).await)
         }
-        Err(SqlError::RowNotFound) => {
+        // Ok(None) => TODO to be None Option<UserDTO>
+        Ok(None) | Err(SqlError::RowNotFound) => {
             // Handle specific error case for missing user
             req.extensions_mut().insert(None::<UserDTO>);
             // insert the current user into a request extension, so the handler can
@@ -169,7 +171,7 @@ where
 //   B: Send + 'static,
 pub async fn handle_error<B>(
     Extension(current_user): Extension<Option<UserDTO>>,
-    State(state): State<Arc<AppState>>,
+    State(state): State<Arc<AppStateProject>>,
     request: Request<Body>,
     next: Next,
 ) -> Result<Response, StatusCode>
@@ -187,12 +189,15 @@ where
             context.insert("status_code", &status_code);
             context.insert("status_text", &status_text);
 
+            // Handle erroe
             let error_template = state.tera.render("views/error.html", &context).unwrap();
 
             let mut context = Context::new();
             context.insert("view", &error_template);
             context.insert("current_user", &current_user);
             context.insert("with_footer", &true);
+
+            // Yandle error
             let rendered = state.tera.render("views/main.html", &context).unwrap();
 
             // for debug via type imlay hints

@@ -1,11 +1,13 @@
 use super::repository::ChatRepository;
-use std::sync::Arc;
 use sqlx::{Pool, Sqlite};
+use std::sync::{Arc, Mutex};
 // use tera::Tera;
 
 #[derive(Clone)]
-pub struct AppState {
+pub struct AppStateProject {
     pub pool: Arc<Pool<Sqlite>>,
     pub tera: tera::Tera,
     pub chat_repo: ChatRepository,
 }
+
+pub type SharedAppState = Arc<Mutex<AppStateProject>>;

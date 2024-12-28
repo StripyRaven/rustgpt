@@ -1,10 +1,10 @@
+#![allow(dead_code)]
 // use sqlx::{
 // database,
 // postgres::PgPoolOptions,
 // mysql::MySqlPoolOptions,
 // sqlite::SqlitePoolOptions
 // };
-
 // use std::env;
 
 pub enum Database {

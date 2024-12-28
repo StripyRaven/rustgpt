@@ -1,5 +1,6 @@
+#![allow(dead_code)]
 // LOCAL
-use crate::model::{app_state::AppState, user_dto::UserDTO};
+use crate::model::{app_state::AppStateProject, user_dto::UserDTO};
 
 use crate::{
     ai_layer::stream::{generate_sse_stream, list_engines, GenerationEvent},
@@ -78,7 +79,7 @@ const MODELS: [(&str, &str, &str); 5] = [
 #[axum::debug_handler]
 //#[doc = string]
 pub async fn chat(
-    State(state): State<Arc<AppState>>,
+    State(state): State<Arc<AppStateProject>>,
     Extension(current_user_data): Extension<Option<UserDTO>>,
 ) -> Html<String> {
     let user_chats = state
@@ -116,7 +117,7 @@ pub struct NewChat {
 
 #[axum::debug_handler]
 pub async fn new_chat(
-    State(state): State<Arc<AppState>>,
+    State(state): State<Arc<AppStateProject>>,
     Extension(current_user_data): Extension<Option<UserDTO>>,
     Form(new_chat): Form<NewChat>,
 ) -> Result<Response<String>, ChatError> {
@@ -151,7 +152,7 @@ struct ParsedMessagePair {
 #[axum::debug_handler]
 pub async fn chat_by_id(
     Path(chat_id): Path<i64>,
-    State(state): State<Arc<AppState>>,
+    State(state): State<Arc<AppStateProject>>,
     Extension(current_user_data): Extension<Option<UserDTO>>,
 ) -> Result<Html<String>, ChatError> {
     let chat_message_pairs = state
@@ -215,7 +216,7 @@ pub struct ChatAddMessage {
 #[axum::debug_handler]
 pub async fn chat_add_message(
     Path(chat_id): Path<i64>,
-    State(state): State<Arc<AppState>>,
+    State(state): State<Arc<AppStateProject>>,
     Extension(_current_user_data): Extension<Option<UserDTO>>,
     Form(chat_add_message): Form<ChatAddMessage>,
 ) -> Result<Html<String>, ChatError> {
@@ -241,7 +242,7 @@ pub async fn chat_add_message(
 pub async fn generate_chat(
     Extension(current_user): Extension<Option<UserDTO>>,
     Path(chat_id): Path<i64>,
-    State(state): State<Arc<AppState>>,
+    State(state): State<Arc<AppStateProject>>,
 ) -> Result<Sse<impl tokio_stream::Stream<Item = Result<Event, axum::Error>>>, ChatError> {
     let chat_message_pairs = state.chat_repo.retrieve_chat(chat_id).await.unwrap();
     let key = current_user // нетт проверок но и нет заимствований срока жизни
@@ -338,7 +339,7 @@ pub async fn generate_chat(
 
 pub async fn delete_chat(
     Path(chat_id): Path<i64>,
-    State(state): State<Arc<AppState>>,
+    State(state): State<Arc<AppStateProject>>,
 ) -> Result<Html<String>, ChatError> {
     state.chat_repo.delete_chat(chat_id).await.unwrap();
 

@@ -1,27 +1,14 @@
+///////////////////////////////////////////////////////////////////////////////
 // LOCAL
 mod model;
 mod project_middleware;
 use model::{app_state, repository::ChatRepository};
 mod router;
 use router::app::app_router::app_router;
-
+///////////////////////////////////////////////////////////////////////////////
 // EXTERNAL
 mod ai_layer;
-use axum::{
-    //extract::RequestParts,
-    http::{
-        //HeaderMap,
-        StatusCode,
-        //Request
-    },
-    //response::{
-    //IntoResponse,
-    //Response,
-    //},
-    Router,
-    //routing::get,
-    //extract::State,
-};
+use axum::Router;
 
 use dotenv;
 
@@ -36,15 +23,17 @@ use std::{net::SocketAddr, path::Path, sync::Arc, time::Duration};
 use tera::Tera;
 use tower_cookies::CookieManagerLayer;
 use tower_http::services::ServeDir;
-use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
+use tracing::{error, info};
+use tracing_subscriber::{layer::SubscriberExt, prelude::*, util::SubscriberInitExt};
 
-// ----------------------------------------------------------------------------
+///////////////////////////////////////////////////////////////////////////////
 // MAIN
-// ----------------------------------------------------------------------------
+///////////////////////////////////////////////////////////////////////////////
 
 #[tokio::main]
 async fn main() {
     dotenv::dotenv().ok();
+    // - [Tracinng](https://www.shuttle.dev/blog/2024/01/09/getting-started-tracing-rust)
     tracing_subscriber::registry()
         .with(
             tracing_subscriber::EnvFilter::try_from_default_env()
@@ -52,8 +41,10 @@ async fn main() {
         )
         .with(tracing_subscriber::fmt::layer())
         .init();
+    info!("Application starting");
 
-    let db_path = dotenv::var("DATABASE_PATH").unwrap(); // move to get db creds
+    let db_path = dotenv::var("DATABASE_PATH").expect("DATABASE_PATH must be set");
+    let migrations_path = dotenv::var("MIGRATIONS_PATH").expect("MIGRATONT_PATH must be set");
 
     let options = SqliteConnectOptions::new()
         .filename(db_path)
@@ -69,9 +60,7 @@ async fn main() {
         .expect("can't connect to database");
 
     // Create a new instance of `Migrator` pointing to the migrations' folder.
-    let migrator = Migrator::new(Path::new(dotenv::var("MIGRATIONS_PATH").unwrap().as_str()))
-        .await
-        .unwrap();
+    let migrator = Migrator::new(Path::new(&migrations_path)).await.unwrap();
 
     // Run the migrations.
     migrator.run(&pool).await.unwrap();
@@ -90,7 +79,7 @@ async fn main() {
         }
     };
 
-    let state = app_state::AppState {
+    let state = app_state::AppStateProject {
         pool,
         tera,
         chat_repo,
@@ -101,6 +90,7 @@ async fn main() {
     // build our application with some routes
     let var_handel_err = axum::middleware::from_fn_with_state(
         shared_app_state.clone(),
+        // handle error
         project_middleware::handle_error::<()>,
     );
 
@@ -121,6 +111,7 @@ async fn main() {
         .layer(CookieManagerLayer::new());
 
     // run it with hyper
+    // open http://0.0.0.0:3000
     let soket_addr = SocketAddr::from(([0, 0, 0, 0], 3000));
 
     tracing::debug!("listening on {}", soket_addr);
@@ -130,4 +121,6 @@ async fn main() {
         .serve(app.into_make_service())
         .await
         .unwrap();
+    // `Err` value: Os { code: 48, kind: AddrInUse, message: "Address already in use" }
+    error!("An error occurred");
 }

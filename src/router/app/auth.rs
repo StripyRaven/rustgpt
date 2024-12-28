@@ -1,8 +1,9 @@
+#![allow(dead_code)]
 // LOCAL
 use crate::model::{
-    app_state::AppState,
+    app_state::AppStateProject,
     // user::UserNormalized,
-    user_dto::UserDTO
+    user_dto::UserDTO,
 };
 
 use axum::{
@@ -10,17 +11,16 @@ use axum::{
     extract::State,
     http::StatusCode,
     response::{Html, IntoResponse, Redirect, Response},
-    Form, Json,
+    Form,
+    Json,
 };
-
 
 use serde::Deserialize;
 use std::sync::Arc;
 use tera::Context;
 use tower_cookies::{Cookie, Cookies};
 
-
-pub async fn login(State(state): State<Arc<AppState>>) -> Html<String> {
+pub async fn login(State(state): State<Arc<AppStateProject>>) -> Html<String> {
     let mut context = Context::new();
     context.insert("name", "World");
     let home = state.tera.render("views/login.html", &context).unwrap();
@@ -61,15 +61,12 @@ pub struct LogInDTO {
     password: String,
 }
 
-
-
 // #[debug_handler]
 pub async fn login_form(
     cookies: Cookies,
-    state: State<Arc<AppState>>,
+    state: State<Arc<AppStateProject>>,
     Form(log_in): Form<LogInDTO>,
-) -> Result<Redirect, LogInError>
-{
+) -> Result<Redirect, LogInError> {
     // Verify password
     // 5 полей в ответе по базе
     //id, email, password, created_at, openai_api_key
@@ -81,7 +78,7 @@ pub async fn login_form(
     */
 
     //getting user fron db
-    let user_db:UserDTO = sqlx::query_as!(
+    let user_db: UserDTO = sqlx::query_as!(
         UserDTO,
         "SELECT
             users.id,
@@ -115,7 +112,7 @@ pub async fn login_form(
     Ok(Redirect::to("/"))
 }
 
-pub async fn signup(State(state): State<Arc<AppState>>) -> Html<String> {
+pub async fn signup(State(state): State<Arc<AppStateProject>>) -> Html<String> {
     // TODO: Hash password
     let mut context = Context::new();
     context.insert("name", "World");
@@ -164,11 +161,9 @@ pub struct SignUp {
 /// where `sqlx::query_as!` is used in your codebase.
 #[axum::debug_handler]
 pub async fn form_signup(
-    state: State<Arc<AppState>>,
+    state: State<Arc<AppStateProject>>,
     Form(sign_up): Form<SignUp>,
-) -> Result<Redirect, SignUpError>
-{
-
+) -> Result<Redirect, SignUpError> {
     if sign_up.password != sign_up.password_confirmation {
         return Err(SignUpError::PasswordMismatch);
     }
@@ -183,7 +178,7 @@ pub async fn form_signup(
     .await
     {
         Ok(_) => Ok(Redirect::to("/login")),
-            // Handle database error, for example, a unique constraint violation
+        // Handle database error, for example, a unique constraint violation
         Err(e) => {
             println!("{}", e);
             Err(SignUpError::DatabaseError(format!(

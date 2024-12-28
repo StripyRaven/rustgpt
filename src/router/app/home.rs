@@ -1,8 +1,5 @@
 // LOCAL
-use crate::model::{
-    user::User,
-    app_state::AppState
-};
+use crate::model::{app_state::AppStateProject, user::User};
 
 use axum::{
     extract::{Extension, State},
@@ -14,8 +11,8 @@ use tera::Context;
 use std::sync::Arc;
 
 #[axum::debug_handler]
-pub async fn app(
-    State(state): State<Arc<AppState>>,
+pub async fn home_app(
+    State(state): State<Arc<AppStateProject>>,
     Extension(current_user): Extension<Option<User>>,
 ) -> Html<String> {
     let mut context = Context::new();

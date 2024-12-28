@@ -1,5 +1,5 @@
 // LOCAL
-use crate::model::{app_state::AppState, project_error::ErrorMessage, user_dto::UserDTO};
+use crate::model::{app_state::AppStateProject, project_error::ErrorMessage, user_dto::UserDTO};
 
 use axum::{
     extract::{Extension, Query, State},
@@ -12,7 +12,7 @@ use tera::Context;
 //#[axum::debug_handler]
 pub async fn error(
     Query(params): Query<ErrorMessage>,
-    State(state): State<Arc<AppState>>,
+    State(state): State<Arc<AppStateProject>>,
     Extension(current_user): Extension<Option<UserDTO>>,
 ) -> Html<String> {
     let err_tmp: &str = "views/error.html";

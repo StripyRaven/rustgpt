@@ -1,3 +1,4 @@
+#![allow(dead_code)]
 ///
 /// User & user handlig
 ///
@@ -5,15 +6,10 @@
 // use super::constant;
 // use super::user_dto::UserDTO;
 use super::project_error::UserValidationError;
-use chrono::{
-    //DateTime,
-    NaiveDate,
-    NaiveDateTime,
-};
+use chrono::{NaiveDate, NaiveDateTime};
 use serde::{Deserialize, Serialize};
 use std::error::Error;
 use std::fmt;
-// use sqlx::FromRow;
 
 /// User with status and description with optional fields
 #[derive(Clone, Debug, Deserialize, Serialize)]

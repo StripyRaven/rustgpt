@@ -1,8 +1,5 @@
 // LOCAL
-use crate::model::{
-    user::User,
-    app_state::AppState
-};
+use crate::model::{app_state::AppStateProject, user::User};
 
 use axum::{
     extract::{Extension, Path, State},
@@ -24,7 +21,7 @@ struct BlogArticlePreview {
 }
 
 pub async fn blog(
-    State(state): State<Arc<AppState>>,
+    State(state): State<Arc<AppStateProject>>,
     Extension(current_user): Extension<Option<User>>,
 ) -> Result<Html<String>, StatusCode> {
     // list all directories in ./templates/articles, extract a tuple (dir_name, serde_parsed dir_name/body.json)
@@ -83,7 +80,7 @@ pub async fn blog(
 #[axum::debug_handler]
 pub async fn blog_by_slug(
     Path(slug): Path<String>,
-    State(state): State<Arc<AppState>>,
+    State(state): State<Arc<AppStateProject>>,
     Extension(current_user): Extension<Option<User>>,
 ) -> Result<Html<String>, StatusCode> {
     let template = format!("articles/{}/body.md", slug);

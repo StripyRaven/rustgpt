@@ -16,12 +16,14 @@
 - [Some useful](https://habr.com/ru/articles/714980/)
 - [By example](https://doc.rust-lang.ru/stable/rust-by-example/index.html)
 
-#### Error Code
+#### Errors handling
+##### Errors Code
 
 - [RUST erroe code index](https://doc.rust-lang.org/error_codes/error-index.html)
 ```sh:example
 rustc --explain E0277
 ```
+- [Tracing subscriber](https://www.shuttle.dev/blog/2024/01/09/getting-started-tracing-rust)
 
 ### Sqlx
 
@@ -34,6 +36,8 @@ rustc --explain E0277
 ### Axum
 
 - [Axum doc](https://crates.io/crates/axum)
+- - [last](https://crates.io/crates/axum/0.7.9)
+- [Router](https://docs.rs/axum/latest/axum/struct.Router.html)
 - [Eamples](https://github.com/tokio-rs/axum/tree/main/examples)
 - [Showcases](https://github.com/tokio-rs/axum/blob/main/ECOSYSTEM.md#project-showcase)
 - [Tutorials](https://github.com/tokio-rs/axum/blob/main/ECOSYSTEM.md#tutorials)
@@ -47,6 +51,11 @@ rustc --explain E0277
 ### HTTP
 
 - [status code registry](https://www.iana.org/assignments/http-status-codes/http-status-codes.xhtml)
+
+### tailwindcss
+
+- [Configuration](https://tailwindcss.com/docs/configuration)
+- [Tailwindcss play](https://play.tailwindcss.com/)
 
 ## Introduction
 
@@ -86,14 +95,25 @@ DATABASE_PATH=db/db.db
 OPENAI_API_KEY=<api-key> (only necessary for tests, users will add their own keys)
 ```
 
-3. Install TailwindCSS Standalone in this repository: https://tailwindcss.com/blog/standalone-cli.
+3. Install TailwindCSS Standalone in [this repository:](https://tailwindcss.com/blog/standalone-cli)
   3.1 [Brew](https://formulae.brew.sh/formula/tailwindcss)
 4. `cargo install just` : install [Just](https://github.com/casey/just)
 5. `just init`          : install additional tools and migrate the db
 6. `just dev`           : concurrently run tailwind and cargo run in watch mode
 7. Open your browser and enjoy chatting with your Rust-powered ChatGPT clone (port 3000 by default)
 
-## Contributing
+### Install tailwindcss
+1. execute
+```sh
+title:terminal
+# Example for macOS arm64
+curl -sLO https://github.com/tailwindlabs/tailwindcss/releases/download/v3.4.17/tailwindcss-macos-x64
+chmod +x tailwindcss-macos-x64
+mv tailwindcss-macos-x64 tailwindcss
+```
+2. rename executable to `tailwindcss`
+
+## Contributin
 
 Contributions are what make the open-source community an incredible place to learn, inspire, and create. Any contributions you make are **greatly appreciated**.
 

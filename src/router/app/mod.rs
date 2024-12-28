@@ -5,5 +5,5 @@ mod auth;
 mod blog;
 mod chat;
 mod error;
-mod home;
+pub mod home;
 mod settings;
