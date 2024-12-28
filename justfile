@@ -10,6 +10,9 @@ init:
 dev-server:
 	cargo watch -w src -w templates -w tailwind.config.js -w input.css -x run
 
+dev-server-debug:
+	cargo watch -w src -w templates -w tailwind.config.js -w input.css -x run
+
 dev-tailwind:
 	./tailwindcss/tailwindcss -i input.css -o assets/output.css --watch=always
 #	./tailwindcss/tailwindcss input.css assets/output.css --watch=always
@@ -31,10 +34,19 @@ db-reset:
 
 dev:
 	#!/bin/sh
-	RUST_BACKTRACE=1 just dev-tailwind &
 	pid1=$!
 	just dev-server &
 	pid2=$!
 	trap "kill $pid1 $pid2" EXIT
 	wait $pid1 $pid2
-	№open http://0.0.0.0:3000
+	open http://0.0.0.0:3001
+
+dev-debug:
+	#!/bin/sh
+	just dev-tailwind &
+	pid1=$!
+	RUST_BACKTRACE=1 just dev-server-debug &
+	pid2=$!
+	trap "kill $pid1 $pid2" EXIT
+	wait $pid1 $pid2
+	open http://0.0.0.0:3000

@@ -23,13 +23,13 @@ use axum::{
     },
 };
 //use::future::Future;
-use tracing;
 
 use sqlx::Error as SqlError;
 use std::sync::Arc; // Sqlx use Arq, check via tree
 
 use tera::Context;
 use tower_cookies::Cookies;
+use tracing::{debug, error, info};
 
 /// # Extract user.
 /// The `extract_user` function attempts to parse the user ID from cookies
@@ -47,6 +47,8 @@ pub async fn extract_user<B>(
 where
     B: Send + 'static,
 {
+    debug!("Tracing: Extract user");
+
     let session = cookies.get("rust-AI-session");
 
     let id: i64 = match session {

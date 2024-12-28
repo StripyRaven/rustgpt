@@ -4,9 +4,8 @@
 use axum::{
     body::Body as body,
     http::{HeaderValue, StatusCode},
-    response::{AppendHeaders, IntoResponse, Redirect, Response},
+    response::{IntoResponse, Redirect, Response},
 };
-use serde::Deserialize;
 
 // --------------------------------------------------------
 // ERROR IN USE

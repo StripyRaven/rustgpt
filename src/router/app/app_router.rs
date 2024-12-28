@@ -16,15 +16,15 @@ use crate::project_middleware::{auth, valid_openai_api_key};
 /////////////////////////////////////////////////////////////////////
 use axum::{
     body::Body as body,
-    http::{Request, StatusCode},
+    http::Request,
     middleware::Next,
-    response::{IntoResponse, Redirect},
+    response::IntoResponse,
     routing::{get, post},
     Router,
 };
 
 use std::sync::Arc;
-use tracing::{error, info};
+use tracing::error;
 
 pub fn app_router<B>(state: Arc<AppStateProject>) -> Router
 where

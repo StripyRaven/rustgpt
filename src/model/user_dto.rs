@@ -38,7 +38,7 @@ impl UserDTO {
         - OK -> Key
         - Err -> no `user` og no `key`
         - Note: Result as `String`
-        - note: to be matcheable with db types
+        - note: to be matchable with db types
         - TODO collect types as ENUM enum {CHAT, MIDDLEWARE, DB .... etc}
         - [Sqlx::Sqlite datatypes](https://docs.rs/sqlx/latest/sqlx/sqlite/types/index.html)
     */

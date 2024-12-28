@@ -112,15 +112,29 @@ async fn main() {
 
     // run it with hyper
     // open http://0.0.0.0:3000
-    let soket_addr = SocketAddr::from(([0, 0, 0, 0], 3000));
+    let socket_addr = SocketAddr::from(([0, 0, 0, 0], 3001));
+    // assert_eq!("0.0.0.0:3000".parse(), Ok(socket_addr));
 
-    tracing::debug!("listening on {}", soket_addr);
+    // if let Err(e) = soket_addr {
+    //     // Log the error or handle it appropriately
+    //     tracing::error!("Failed to bind server: {}", e);
+    // } else {
+    //     // Server started successfully
+    //     tracing::info!("Server started on 127.0.0.1:8080");
+    // }
+
+    tracing::debug!("listening on {}", socket_addr);
 
     // https://crates.io/crates/axum-server
-    axum_server::bind(soket_addr)
+    // **Identify the Process Using the Port**:
+    //   You can use tools like `lsof` (on Unix-like systems) or `netstat`/`ss` (also on Unix-like systems) to find out which process is using the port.
+    //```sh
+    // lsof -i :3000
+    // ```
+    axum_server::bind(socket_addr)
         .serve(app.into_make_service())
         .await
-        .unwrap();
-    // `Err` value: Os { code: 48, kind: AddrInUse, message: "Address already in use" }
-    error!("An error occurred");
+        .unwrap(); //("some error o start");
+                   // `Err` value: Os { code: 48, kind: AddrInUse, message: "Address already in use" }
+    error!("tracing: An error occurred");
 }

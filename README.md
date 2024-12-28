@@ -59,8 +59,8 @@ rustc --explain E0277
 
 ## Introduction
 
-RustGPT is my latest experiment in cloning the abilities of OpenAI's ChatGPT. It represents the fourth iteration in a series of clones, each built with different tech stacks to evaluate their functionality in creating a ChatGPT-like application.
-In this repository, you will find a Rust-based server leveraging the Axum framework combined with HTMX, providing a Rusty web development experience. From database operations to streaming responses, this project covers a broad spectrum of backend functionalities and real-time web interactions.
+Rust-AI is latest experiment in cloning the abilities of OpenAI's Chat-AI.
+In this repository, a Rust-based server leveraging the Axum framework combined with HTMX, providing a Rusty web development experience. From database operations to streaming responses, this project covers a broad spectrum of backend functionalities and real-time web interactions.
 So, for Rust enthusiasts and web developers alike, dive in to explore a world where web development is redefined with the power of Rust!
 
 ## Features
@@ -80,8 +80,6 @@ So, for Rust enthusiasts and web developers alike, dive in to explore a world wh
 For those eyeing some client-side WASM magic, you might also want to check out [Yew](https://github.com/yewstack/yew) or [Leptos](https://github.com/LeptosProject/leptos) for more complex applications.
 
 ## Quickstart
-
-Jump right into it by following these steps:
 
 1. Clone the repository.
 2. Create a .env
@@ -121,9 +119,6 @@ If you have a suggestion that would make RustGPT better, please fork the repo an
 
 ## Acknowledgments
 
-Hats off to the wonderful crates and libraries that made RustGPT possible!
+Hats off to the wonderful crates and libraries that made Rust_AI possible!
 
 ---
-
-Created with by a Rustacean who believes in the power of Rust for the web!
-Follow the journey on [Bitswired](https://www.bitswired.com).
