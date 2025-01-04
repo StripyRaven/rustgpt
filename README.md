@@ -17,12 +17,15 @@
 - [By example](https://doc.rust-lang.ru/stable/rust-by-example/index.html)
 
 #### Errors handling
+
 ##### Errors Code
 
 - [RUST erroe code index](https://doc.rust-lang.org/error_codes/error-index.html)
+
 ```sh:example
 rustc --explain E0277
 ```
+
 - [Tracing subscriber](https://www.shuttle.dev/blog/2024/01/09/getting-started-tracing-rust)
 
 ### Sqlx
@@ -42,10 +45,13 @@ rustc --explain E0277
 - [Showcases](https://github.com/tokio-rs/axum/blob/main/ECOSYSTEM.md#project-showcase)
 - [Tutorials](https://github.com/tokio-rs/axum/blob/main/ECOSYSTEM.md#tutorials)
 - [Community projects](https://github.com/tokio-rs/axum/blob/main/ECOSYSTEM.md)
+
 ****
+
 - [more example](https://codevoweb.com/rust-crud-api-example-with-axum-and-postgresql/)
 
 ### Acc & Mutex
+
 - [Arc and Mutex in Rust](https://itsallaboutthebit.com/arc-mutex/)
 
 ### HTTP
@@ -85,6 +91,7 @@ For those eyeing some client-side WASM magic, you might also want to check out [
 2. Create a .env
 
 ### .env
+
 ```env
 MIGRATIONS_PATH=db/migrations
 TEMPLATES_PATH=templates
@@ -93,15 +100,17 @@ DATABASE_PATH=db/db.db
 OPENAI_API_KEY=<api-key> (only necessary for tests, users will add their own keys)
 ```
 
-3. Install TailwindCSS Standalone in [this repository:](https://tailwindcss.com/blog/standalone-cli)
-  3.1 [Brew](https://formulae.brew.sh/formula/tailwindcss)
-4. `cargo install just` : install [Just](https://github.com/casey/just)
-5. `just init`          : install additional tools and migrate the db
-6. `just dev`           : concurrently run tailwind and cargo run in watch mode
-7. Open your browser and enjoy chatting with your Rust-powered ChatGPT clone (port 3000 by default)
+1. Install TailwindCSS Standalone in [this repository:](https://tailwindcss.com/blog/standalone-cli)
+  1.1 [Brew](https://formulae.brew.sh/formula/tailwindcss)
+2. `cargo install just` : install [Just](https://github.com/casey/just)
+3. `just init`          : install additional tools and migrate the db
+4. `just dev`           : concurrently run tailwind and cargo run in watch mode
+5. Open your browser and enjoy chatting with your Rust-powered ChatGPT clone (port 3000 by default)
 
 ### Install tailwindcss
+
 1. execute
+
 ```sh
 title:terminal
 # Example for macOS arm64
@@ -109,7 +118,8 @@ curl -sLO https://github.com/tailwindlabs/tailwindcss/releases/download/v3.4.17/
 chmod +x tailwindcss-macos-x64
 mv tailwindcss-macos-x64 tailwindcss
 ```
-2. rename executable to `tailwindcss`
+
+- rename executable to `tailwindcss`
 
 ## Contributin
 
@@ -121,4 +131,4 @@ If you have a suggestion that would make RustGPT better, please fork the repo an
 
 Hats off to the wonderful crates and libraries that made Rust_AI possible!
 
----
+****

@@ -8,7 +8,7 @@ use std::sync::{Arc, Mutex};
 #[derive(Clone)]
 pub struct AppStateProject {
     pub pool: Arc<Pool<Sqlite>>,
-    pub tera: tera::Tera,
+    pub tera_templates: tera::Tera,
     pub chat_repo: ChatRepository,
 }
 

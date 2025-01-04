@@ -1,4 +1,14 @@
 #![allow(dead_code)]
+/**
+ * # Chat
+ * chatting with ai using openai
+ * - list models
+ * - chat
+ * - stream
+ * - delete chat
+ * - delete chat message
+ */
+///////////////////////////////////////////////////////////////////////////////////////////////////
 // LOCAL
 use crate::model::{app_state::AppStateProject, user_dto::UserDTO};
 
@@ -8,7 +18,7 @@ use crate::{
 };
 // EXTERNAL
 use axum::{
-    //debug_hendler,
+    //debug_handler,
     extract::{Extension, Path, State},
     http::StatusCode,
     response::{sse::Event, Html, IntoResponse, Response, Sse},
@@ -36,9 +46,9 @@ pub enum ChatError {
 impl IntoResponse for ChatError {
     fn into_response(self) -> Response {
         match self {
-            ChatError::Other => (StatusCode::BAD_REQUEST, Json("Chat Errror")).into_response(),
+            ChatError::Other => (StatusCode::BAD_REQUEST, Json("Chat Error")).into_response(),
             ChatError::InvalidAPIKey => {
-                (StatusCode::UNAUTHORIZED, Json("Chat Errror")).into_response()
+                (StatusCode::UNAUTHORIZED, Json("Chat Error")).into_response()
             }
             ChatError::EmptyKey => {
                 (StatusCode::UNAUTHORIZED, Json("None Key Chat Error")).into_response()
@@ -50,25 +60,30 @@ impl IntoResponse for ChatError {
     }
 }
 
-// TODO move to models and turn to vars, maybe .ENV beetter to Tree or Json or coomon struct with all necessary fields
+// TODO move to models and turn to vars, maybe .ENV better to Tree or Json or common struct with all necessary fields
 // array of 5 tuples with 3 string each
 const MODELS: [(&str, &str, &str); 5] = [
+    // 1
     (
         "GPT-4-Preview",
         "gpt-4-1106-preview",
         "This is the preview version of the GPT-4 model.",
     ),
+    // 2
     ("GPT-4", "gpt-4", "Latest generation GPT-4 model."),
+    // 3
     (
         "GPT-3.5-16K",
         "gpt-3.5-turbo-16k",
         "An enhanced GPT-3.5 model with 16K token limit.",
     ),
+    // 4
     (
         "GPT-3.5",
         "gpt-3.5-turbo",
         "Standard GPT-3.5 model with turbo features.",
     ),
+    // 5
     (
         "Ollama",
         "qwen2.5-coder",
@@ -76,38 +91,40 @@ const MODELS: [(&str, &str, &str); 5] = [
     ),
 ];
 
+/** # fn chat
+* chat page
+
+*
+*/
 #[axum::debug_handler]
-//#[doc = string]
 pub async fn chat(
     State(state): State<Arc<AppStateProject>>,
     Extension(current_user_data): Extension<Option<UserDTO>>,
 ) -> Html<String> {
+    tracing::info!("Enter CHAT");
+
     let user_chats = state
         .chat_repo
         .get_all_chats(current_user_data.as_ref().unwrap().id)
         .await
         .unwrap();
 
-    let selected_model = MODELS.iter().filter(|f| f.1 == "gpt-4").collect::<Vec<_>>()[0];
+    // TODO! default selection for model
+    let selected_model = MODELS.iter().find(|&f| f.1 == "qwen2.5-coder").unwrap();
 
     let mut context = Context::new();
     context.insert("models", &MODELS);
     context.insert("selected_model", &selected_model);
     context.insert("user_chats", &user_chats);
-    let home = state.tera.render("views/chat.html", &context).unwrap();
+    let home = state.tera_templates.render("views/chat.html", &context).unwrap();
 
     let mut context = Context::new();
     context.insert("view", &home);
-    context.insert(
-        "current_user_data
-        ",
-        &current_user_data,
-    );
-    let rendered = state.tera.render("views/main.html", &context).unwrap();
+    context.insert("current_user_data", &current_user_data);
+    let rendered = state.tera_templates.render("views/main.html", &context).unwrap();
 
     Html(rendered)
 }
-
 // TODO move to models
 #[derive(Deserialize, Debug)]
 pub struct NewChat {
@@ -115,12 +132,19 @@ pub struct NewChat {
     model: String,
 }
 
+/**
+ * # fn new_chat
+ * create new chat
+ * - create chat
+ *
+ */
 #[axum::debug_handler]
 pub async fn new_chat(
     State(state): State<Arc<AppStateProject>>,
     Extension(current_user_data): Extension<Option<UserDTO>>,
     Form(new_chat): Form<NewChat>,
 ) -> Result<Response<String>, ChatError> {
+    tracing::info!("Enter NEW_CHAT");
     let current_user_data = current_user_data.unwrap();
 
     let chat_id = state
@@ -155,6 +179,7 @@ pub async fn chat_by_id(
     State(state): State<Arc<AppStateProject>>,
     Extension(current_user_data): Extension<Option<UserDTO>>,
 ) -> Result<Html<String>, ChatError> {
+    tracing::info!("Enter CHAT_BY_ID");
     let chat_message_pairs = state
         .chat_repo
         .retrieve_chat(chat_id)
@@ -196,17 +221,17 @@ pub async fn chat_by_id(
     context.insert("user_chats", &user_chats);
     context.insert("selected_model", &selected_model);
 
-    let home = state.tera.render("views/chat.html", &context).unwrap();
+    let home = state.tera_templates.render("views/chat.html", &context).unwrap();
 
     let mut context = Context::new();
     context.insert("view", &home);
     context.insert("current_user_data", &current_user_data);
-    let rendered = state.tera.render("views/main.html", &context).unwrap();
+    let rendered = state.tera_templates.render("views/main.html", &context).unwrap();
 
     Ok(Html(rendered))
 }
 
-// TODO move to modeels
+// TODO move to models
 #[derive(Deserialize, Debug)]
 pub struct ChatAddMessage {
     message: String,
@@ -220,6 +245,7 @@ pub async fn chat_add_message(
     Extension(_current_user_data): Extension<Option<UserDTO>>,
     Form(chat_add_message): Form<ChatAddMessage>,
 ) -> Result<Html<String>, ChatError> {
+    tracing::info!("Enter CHAT_ADD_MESSAGE");
     let message = chat_add_message.message;
     state
         .chat_repo
@@ -231,7 +257,7 @@ pub async fn chat_add_message(
     context.insert("human_message", &message);
     context.insert("chat_id", &chat_id);
     let update = state
-        .tera
+        .tera_templates
         .render("htmx_updates/add_message.html", &context)
         .unwrap();
 
@@ -244,6 +270,7 @@ pub async fn generate_chat(
     Path(chat_id): Path<i64>,
     State(state): State<Arc<AppStateProject>>,
 ) -> Result<Sse<impl tokio_stream::Stream<Item = Result<Event, axum::Error>>>, ChatError> {
+    tracing::info!("Enter GENERATE_CHAT");
     let chat_message_pairs = state.chat_repo.retrieve_chat(chat_id).await.unwrap();
     let key = current_user // нетт проверок но и нет заимствований срока жизни
         .unwrap()
@@ -273,7 +300,7 @@ pub async fn generate_chat(
         )
         .await
         {
-            eprintln!("Error generating SSE stream: {:?}", e);
+            tracing::error!("Error generating SSE stream: {:?}", e);
         }
     });
 
@@ -341,6 +368,7 @@ pub async fn delete_chat(
     Path(chat_id): Path<i64>,
     State(state): State<Arc<AppStateProject>>,
 ) -> Result<Html<String>, ChatError> {
+    tracing::info!("Enter DELETE_CHAT");
     state.chat_repo.delete_chat(chat_id).await.unwrap();
 
     let html = r#"<div class="hidden"></div>"#;

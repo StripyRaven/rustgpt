@@ -1,8 +1,11 @@
 #![allow(dead_code)]
+#![allow(unused_imports)]
 /// Spicific for service errors
-// consider importing one of these structs: `use crate::StatusCode;
+/// consider importing one of these structs: `use crate::StatusCode;
+/// [into response](https://docs.rs/axum/latest/axum/response/trait.IntoResponse.html)
+/// [Body](https://docs.rs/axum/latest/axum/body/struct.Body.html)
 use axum::{
-    body::Body as body,
+    body::Body,
     http::{HeaderValue, StatusCode},
     response::{IntoResponse, Redirect, Response},
 };
@@ -55,10 +58,10 @@ impl ErrorMessage {
         ```
     [into_response](https://docs.rs/axum/latest/axum/response/trait.IntoResponse.html)
     */
-    pub fn into_response(self) -> Response<body> {
+    pub fn into_response(self) -> Response {
         //! used distinnc value for temlate
         let err_tmplate = "/error?code={1}&message={2}";
-        let redirect_template = "HX-Redirect";
+        let redirect_header = "HX-Redirect";
         // 1
         //let to = format!("/error?code={}&message={}", self.code, self.message);
         let to = err_tmplate
@@ -67,7 +70,7 @@ impl ErrorMessage {
         let redirect = Redirect::to(&to);
         let mut response: Response = redirect.into_response();
         let header_map = response.headers_mut();
-        header_map.insert(redirect_template, HeaderValue::from_str(&to).unwrap());
+        header_map.insert(redirect_header, HeaderValue::from_str(&to).unwrap());
         //response
         // redirect.HeadersAppend([(
         //     HeaderValue::from_str("HX-Redirect").unwrap(),
@@ -95,9 +98,9 @@ pub enum ApiError {
     Forbidden(ErrorMessage),
     Unauthorized(ErrorMessage),
     InternalServerError(ErrorMessage),
+    DatabaseError(ErrorMessage),
 }
 
-// TODO wronng
 impl From<axum::http::StatusCode> for ErrorMessage {
     fn from(status_code: axum::http::StatusCode) -> Self {
         ErrorMessage {
@@ -139,7 +142,7 @@ impl IntoResponse for ApiError {
             }
             ```
     */
-    fn into_response(self) -> Response<body> {
+    fn into_response(self) -> Response {
         match self {
             ApiError::BadRequest(_error) => {
                 ErrorMessage::from(StatusCode::BAD_REQUEST).into_response()
@@ -151,6 +154,9 @@ impl IntoResponse for ApiError {
                 ErrorMessage::from(StatusCode::UNAUTHORIZED).into_response()
             }
             ApiError::InternalServerError(_error) => {
+                ErrorMessage::from(StatusCode::INTERNAL_SERVER_ERROR).into_response()
+            }
+            ApiError::DatabaseError(_error) => {
                 ErrorMessage::from(StatusCode::INTERNAL_SERVER_ERROR).into_response()
             }
         }

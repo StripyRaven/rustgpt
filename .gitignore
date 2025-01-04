@@ -1,5 +1,7 @@
 /target
 .env
+.idea
+.vscode
 *.db*
 tailwindcss
 output.css

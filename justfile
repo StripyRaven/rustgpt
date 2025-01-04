@@ -4,6 +4,7 @@ set dotenv-load
 init:
 	cargo install cargo-watch
 	cargo install sqlx-cli
+	
 	sqlx database create
 	just db-migrate
 
@@ -32,14 +33,19 @@ db-reset:
   sqlx database drop && sqlx database create && sqlx migrate run --source $MIGRATIONS_PATH
   sqlite3 $DATABASE_PATH < seeds/seed-users.sql
 
+dev-w:
+    cargo watch --clear --no-restart -w
+
 dev:
 	#!/bin/sh
 	pid1=$!
-	just dev-server &
+	echo $pid1
+	just dev-server
 	pid2=$!
 	trap "kill $pid1 $pid2" EXIT
 	wait $pid1 $pid2
-	open http://0.0.0.0:3001
+# open http://0.0.0.0:3001
+
 
 dev-debug:
 	#!/bin/sh
@@ -49,7 +55,7 @@ dev-debug:
 	pid2=$!
 	trap "kill $pid1 $pid2" EXIT
 	wait $pid1 $pid2
-	open http://0.0.0.0:3000
+# open http://0.0.0.0:3000
 
 clean:
     cargo update -vv

@@ -1,10 +1,12 @@
 <!-- a fixed header bar in tailwind -->
 <header class="z-50 fixed h-[60px] w-full text-white bg-indigo-600 t-0 l-0 flex items-center justify-between px-8">
-    <div class="flex items-center gap-4 w-1/3">
-        <a class="mr-8 font-bold" href="/">RustGPT</a>
-
-        <div class="flex gap-4 items-center" title="GitHub Repository">
-            <a class="flex gap-2 items-center text-sm hover:underline" href="https://github.com/bitswired/RustGPT"
+    <div class="flex items-center w-1/3 gap-4">
+        <a class="mr-8 font-bold" href="/">
+            <!-- TODO: to be changed on "/header" -->
+            Rust-AI
+        </a>
+        <div class="flex items-center gap-4" title="GitHub Repository">
+            <a class="flex items-center gap-2 text-sm hover:underline" href="https://github.com/StripyRaven/rustgpt"
                 target="_blank">
                 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 32 32">
                     <path fill="currentColor" fill-rule="evenodd"
@@ -14,8 +16,8 @@
                     GitHub
                 </p>
             </a>
-
-            <a class="flex gap-2 items-center text-sm hover:underline" href="https://discord.gg/MqG5Vh8s"
+            <!-- 
+            <a class="flex items-center gap-2 text-sm hover:underline" href="https://discord.gg/MqG5Vh8s"
                 target="_blank">
                 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 32 32">
                     <path fill="currentColor"
@@ -24,23 +26,17 @@
                 <p>
                     Discord
                 </p>
-            </a>
+            </a> -->
         </div>
     </div>
-
-    <nav class="w-1/3 flex items-center justify-center p-6 lg:px-8" aria-label="Global">
-
-        <div class="flex gap-x-12 justify-center">
+    <nav class="flex items-center justify-center w-1/3 p-6 lg:px-8" aria-label="Global">
+        <div class="flex justify-center gap-x-12">
             <a href="/chat" class="text-sm font-semibold leading-6">Chat</a>
             <a href="/settings" class="text-sm font-semibold leading-6">Settings</a>
             <a href="/blog" class="text-sm font-semibold leading-6">Blog</a>
         </div>
-
     </nav>
-
-    <div class="w-1/3 ml-auto flex justify-end items-center">
-
-
+    <div class="flex items-center justify-end w-1/3 ml-auto">
         {% if current_user and current_user.email %}
         <div>
             {{ current_user.email }}
@@ -48,16 +44,14 @@
         <form action="/logout" method="logout">
             <button
                 class="rounded-md  px-2.5 py-1.5 text-sm font-semibold shadow-sm hover:bg-indigo-800 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-800">
-                Logout</button>
+                Logout
+            </button>
         </form>
-
         {% else %}
         <a href="/login"
             class="rounded-md px-2.5 py-1.5 text-sm font-semibold shadow-sm hover:bg-indigo-800 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600">
-            Login</a>
+            Login
+        </a>
         {% endif %}
-
-
     </div>
-
 </header>

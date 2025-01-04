@@ -1,6 +1,12 @@
 /// LOCAL
-use crate::model::{app_state::AppStateProject, project_error::ErrorMessage, user_dto::UserDTO};
+use crate::model::{
+    app_state::AppStateProject,
+    constant::{ID_USER_NONE, SESSION_NAME},
+    project_error::ErrorMessage,
+    user_dto::UserDTO,
+};
 
+/// EXTERNAL
 use axum::{
     body::Body,
     //async_trait,
@@ -14,7 +20,7 @@ use axum::{
     middleware::Next,
     response::{
         Extension,
-        //User,
+        // User,
         // client::Client,
         Html,
         IntoResponse,
@@ -22,14 +28,14 @@ use axum::{
         Response,
     },
 };
-//use::future::Future;
-
+use tracing::instrument::WithSubscriber;
+//////////////////////////////////////////////////////////////////////
 use sqlx::Error as SqlError;
 use std::sync::Arc; // Sqlx use Arq, check via tree
 
 use tera::Context;
 use tower_cookies::Cookies;
-use tracing::{debug, info};
+// use tracing::info;
 
 /// # Extract user.
 /// The `extract_user` function attempts to parse the user ID from cookies
@@ -38,106 +44,155 @@ use tracing::{debug, info};
 /// - Note: However, this approach can lead to potential issues if parsing or fetching operations fail unexpectedly.
 
 // TODO split into two part SQL requst and assertion
-pub async fn extract_user<B>(
+pub async fn extract_user(
     State(state): State<Arc<AppStateProject>>,
     cookies: Cookies,
     mut req: Request<Body>,
     next: Next,
-) -> Result<Response, StatusCode>
-where
-    B: Send + 'static,
-{
-    tracing::debug!("Start - extract_user");
-    let session = cookies.get("rust-AI-session");
+) -> Result<Response<Body>, StatusCode> {
+    tracing::info!("Enter EXTRACT USER MIDDLEWARE");
+    let session_name = cookies.get(SESSION_NAME);
 
-    let id: i64 = match session {
+    let user_id_session: i64 = match session_name {
         Some(session) => session
             .value()
             .parse::<i64>()
             .map_err(|_| StatusCode::BAD_REQUEST)?,
-        None => -1,
+        None => ID_USER_NONE,
     };
-    tracing::debug!("user id: {}", &id);
+
+    // if 0 there is no user in session cookyes - main or sign up
+    if user_id_session == ID_USER_NONE {
+        tracing::info!(
+            "
+            SESSION USER.ID: {}
+            CURRENT USER IS NONE
+            NOT AUTHORIZED",
+            &user_id_session
+        );
+        // TODO: go to main or sign up
+        req.extensions_mut().insert(None::<UserDTO>);
+        return Ok(next.run(req).await);
+    }
+
+    tracing::info!("SESSION USER.ID: {}", &user_id_session);
+
     // Get the user - turn to function
-    match sqlx::query_as!(
+    let user_tmp = sqlx::query_as!(
         UserDTO,
-        "SELECT users.*, settings.openai_api_key
+        r#"SELECT users.*, settings.openai_api_key
             FROM users
                 LEFT JOIN settings
                 ON settings.user_id=users.id
-                WHERE users.id = $1",
-        id
+                WHERE users.id = $1"#,
+        user_id_session
     )
     .fetch_optional(&*state.pool)
-    .await
-    {
+    .await;
+
+    tracing::info!("USER DATA EXTRACTED WITH ID: {}", user_id_session);
+
+    match user_tmp {
         Ok(Some(current_user)) => {
             // insert the current user into a request extension, so the handler can
             // extract it, and make sure `user` is not used after this point.
-            req.extensions_mut().insert(current_user);
-            //next.run(req).await
-            Ok(next.run(req).await)
+            req.extensions_mut().insert(Some(current_user.clone()));
+            tracing::info!(
+                "
+            OK(SOME  USER) EXTRACTED, insert user to extension
+            id:            {}
+            email:         {}
+            password       {}
+            openai_api_key {:?}
+            RESPONSE HEADERS: {:?}",
+                current_user.id,
+                current_user.email,
+                current_user.password,
+                current_user.openai_api_key,
+                &req.headers().keys(),
+            );
+            let run = next.run(req);
+            Ok(run.await)
         }
-        // Ok(None) => TODO to be None Option<UserDTO>
+        // Ok(None) or NotFound => TODO to be None Option<UserDTO>
         Ok(None) | Err(SqlError::RowNotFound) => {
-            tracing::debug!("current user is Nono {}", &id);
             // Handle specific error case for missing user
             req.extensions_mut().insert(None::<UserDTO>);
+            tracing::info!("CURRENT USER IS NONE: {}", &user_id_session);
             // insert the current user into a request extension, so the handler can
             // extract it, and make sure `user` is not used after this point
-            //next.run(req).await
             Ok(next.run(req).await)
         }
-        Err(_) => Err(StatusCode::INTERNAL_SERVER_ERROR),
+        Err(_) => {
+            tracing::error!("ERROR TRACING TAKE A LOOK");
+            Err(StatusCode::INTERNAL_SERVER_ERROR)
+        }
     }
 }
-
-/// # Authentication Middleware (`auth`)
-/// This middleware checks if the user is logged in and redirects to an error page if not.
-pub async fn auth<B>(
-    Extension(current_user): Extension<Option<UserDTO>>,
-    request: Request<Body>,
-    next: Next,
-) -> Response
-where
-    B: Send + 'static,
-{
-    // не очень пойму зачем это
-    let to = format!("/error?code={}&message={}", "401", "Log in");
-    let r = Redirect::to(&to);
-    let mut r = r.into_response();
-    let h = r.headers_mut();
-    h.insert("HX-Redirect", HeaderValue::from_str(&to).unwrap());
-    // до этого момента, похоже обработчика нет
-    match current_user {
-        Some(_) => next.run(request).await,
-        None => ErrorMessage::new(
-            StatusCode::UNAUTHORIZED.as_u16(),
-            "You need to log in to view this page",
-        )
-        .into_response(),
-    }
-}
-
-///
-pub async fn valid_openai_api_key<B>(
+/**
+    # Authentication Middleware (`auth`)
+        This middleware checks if the user is logged in and redirects to an error page
+        if not.
+*/
+pub async fn auth(
     Extension(current_user): Extension<Option<UserDTO>>,
     req: Request<Body>,
     next: Next,
-) -> Response
-where
-    B: Send + 'static,
+) -> Response<Body> {
+    tracing::info!("Enter AUTH MIDDLEWARE");
+    //////////////////////////////////////
+    // TODO: check next snippet wuth fn error_response
+    //  if error we need to redirect to error page
+    //  and insert header
+    //  if ok - continue
+    let to = format!("/error?code={}&message={}", "401", "Log in");
+    let r = Redirect::to(&to);
+    let mut r = r.into_response();
+    let header_map = r.headers_mut();
+    header_map.insert("HX-Redirect", HeaderValue::from_str(&to).unwrap());
+    //////////////////////////////////////
+    match current_user {
+        Some(_user) => {
+            tracing::info!("USER IS LOGGED IN");
+            // continue
+            next.run(req).await
+        }
+        _ => error_response(401, "You need to log in to view this page"),
+    }
+}
+
+/**
+ * # fn valid openai api key
+ * This middleware checks if the user has a valid OpenAI API key.
+ * If the key is invalid, it redirects to an error page.
+ * If the key is valid, it continues to the next middleware.
+ * If the user is not logged in, it redirects to the login page.
+ * If the user has no OpenAI API key, it redirects to the settings page.
+ *
+ * pa
+ */
+pub async fn valid_openai_api_key(
+    Extension(current_user): Extension<Option<UserDTO>>,
+    req: Request<Body>,
+    next: Next,
+) -> Response<Body>
+//where
+    //B: Send + 'static,
 {
-    //let cud = current_user.clone().unwrap();
+    tracing::info!("Enter VALID OPENAI API KEY MIDDLEWARE");
+
     if let Some(user_dto) = current_user {
         let key = user_dto
             .get_open_ai_api_key()
             .unwrap_or("400: key unexist".to_string());
 
+        tracing::info!("UserDTO.KEY: {}", &key);
+
         let client = reqwest::Client::new();
         match client
             // [ ]: TODO - get the env variant
-            .get("https://api.openai.com/v1/engines")
+            // [ ]: TODO set the env variant
+            .get("https://api.openai.com/v1/engines") // TODO what for?
             .bearer_auth(&key)
             .send()
             .await
@@ -146,48 +201,61 @@ where
                 if res.status().is_success() {
                     next.run(req).await
                 } else {
-                    ErrorMessage::new(
-                        StatusCode::FORBIDDEN.as_u16(),
-                        "You API key is not set or invalid. Go to Settings.",
-                    )
-                    .into_response()
+                    tracing::info!("ou API key is not set or invalid. Go to Settings");
+                    error_response(401, "You need to log in to view this page")
                 }
             }
-            Err(_) => ErrorMessage::new(
-                StatusCode::FORBIDDEN.as_u16(),
-                "You API key is not set or invalid. Go to Settings",
-            )
-            .into_response(),
+            Err(_) => error_response(401, "You need to log in to view this page"),
         }
     } else {
         //let key = "400: key unexist";
-        ErrorMessage::new(400, "You API key is not set or invalid. Go to Settings").into_response()
+        error_response(401, "You need to log in to view this page")
     }
 }
 
-///  — Ensure that custom errors are rendered properly.
-/// - [http statuses](https://www.iana.org/assignments/http-status-codes/http-status-codes.xhtml)
-// TO
-// pub async fn handle_error<B>(req: Request<B>) -> Result<impl IntoResponse, StatusCode>
-// where
-//   B: Send + 'static,
-pub async fn handle_error<B>(
+/**
+* # fn handle_error
+* ## parameters:
+* - `req` - Request<Body>
+* - `state` - State<Arc<AppStateProject>>
+* - `next` - Next
+* - `Result<Response<Body>, StatusCode>`
+* - [StatusCode](https://www.iana.org/assignments/http-status-codes/http-status-codes.xhtml)
+* - [Context](https://docs.rs/handlebars/4.3.5/handlebars/struct.Context.html)
+* ## Templates
+* - `views/error.html`
+* - `views/main.html`
+* - `views/partials/header.html`
+* - `views/partials/footer.html`
+*/
+pub async fn handle_error(
     Extension(current_user): Extension<Option<UserDTO>>,
     State(state): State<Arc<AppStateProject>>,
     request: Request<Body>,
     next: Next,
-) -> Result<Response, StatusCode>
-where
-    B: Send + 'static,
+) -> Result<Response<Body>, StatusCode>
+//where
+//    B: Send + 'static,
 {
-    tracing::debug!("Start - handle error");
+    tracing::info!(
+        "
+        ENTER HANDLE_ERROR MIDDLEWARE"
+    );
 
     let response = next.run(request).await;
 
     let status_code = response.status().as_u16();
-    let status_text = response.status().as_str().to_string();
+    let status_text = response.status().to_string();
 
-    tracing::debug!("satus code: {}", status_code);
+    tracing::info!(
+        "
+        STATUS CODE:    {}
+        MESSAGE:        {}
+        RESP.HEADER     {:?}",
+        &status_code,
+        &status_text,
+        &response.headers().keys()
+    );
 
     match status_code {
         _ if status_code >= 400 => {
@@ -195,26 +263,62 @@ where
             context.insert("status_code", &status_code);
             context.insert("status_text", &status_text);
 
-            // Handle erroe
-            let error_template = state.tera.render("views/error.html", &context).unwrap();
+            // Handle error
+            let error_template = state
+                .tera_templates
+                .render("views/error.html", &context)
+                .unwrap();
 
             let mut context = Context::new();
             context.insert("view", &error_template);
             context.insert("current_user", &current_user);
             context.insert("with_footer", &true);
 
-            // Yandle error
-            let rendered = state.tera.render("views/main.html", &context).unwrap();
+            // Handle error
+            let rendered = state
+                .tera_templates
+                .render("views/main.html", &context)
+                .unwrap();
 
-            // for debug via type imlay hints
-            // Response<Body>
-            let rsp_tmp = Html(rendered).into_response();
             // Result<Response, StatusCode>
+            tracing::info!("GO TO {}", &rendered);
+            let rsp_tmp = Html(rendered).into_response();
             Ok(rsp_tmp)
         }
         _ => {
-            // response.status().as_u16() < 400 {
+            // if response.status().as_u16() < 400 {
+            tracing::info!(
+                "
+            STATUS CODE:    {},
+            HEAD.PARTS:     {:?},
+            BODY.PARTS:     {:?}",
+                &status_code,
+                //&response.headers().get("Content-Type"),
+                &response.headers().get_all("inner"),
+                &response.body().with_current_subscriber(),
+            );
             Ok(response)
         }
     }
+}
+/**
+ * # fn error_response
+ * ## parameters:
+ * - `code` - u16
+ * - `message` - &str
+ * returns:
+ * - Response
+ * - [StatusCode](https://www.iana.org/assignments/http-status-codes/http-status-codes.xhtml)
+ * HX-Redirect
+ * template:
+ * - `views/error.html`
+ */
+pub fn error_response(code: u16, message: &str) -> Response {
+    tracing::info!("Enter ERROR RESPONSE");
+    let to = format!("/error?code={}&message={}", code, message);
+    let r = Redirect::to(&to);
+    let mut r = r.into_response();
+    let h = r.headers_mut();
+    h.insert("HX-Redirect", HeaderValue::from_str(&to).unwrap());
+    r
 }

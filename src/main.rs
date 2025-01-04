@@ -1,3 +1,4 @@
+#![allow(unused_imports)]
 ///////////////////////////////////////////////////////////////////////////////
 // LOCAL
 mod model;
@@ -5,9 +6,9 @@ mod project_middleware;
 use model::{app_state, repository::ChatRepository};
 mod router;
 use router::app::app_router::app_router;
+mod ai_layer;
 ///////////////////////////////////////////////////////////////////////////////
 // EXTERNAL
-mod ai_layer;
 use axum::Router;
 
 use dotenv;
@@ -23,31 +24,37 @@ use std::{net::SocketAddr, path::Path, sync::Arc, time::Duration};
 use tera::Tera;
 use tower_cookies::CookieManagerLayer;
 use tower_http::services::ServeDir;
-use tracing::{error, info};
-use tracing_subscriber::{fmt, layer::SubscriberExt, prelude::*, util::SubscriberInitExt};
-
+use tracing::{debug, error, info};
+use tracing_subscriber::{
+    filter::{EnvFilter, LevelFilter},
+    fmt,
+    prelude::*,
+    util::SubscriberInitExt,
+};
 ///////////////////////////////////////////////////////////////////////////////
 // MAIN
 ///////////////////////////////////////////////////////////////////////////////
 
-/// - [Tracinng](https://www.shuttle.dev/blog/2024/01/09/getting-started-tracing-rust)
+/// - [Tracing](https://www.shuttle.dev/blog/2024/01/09/getting-started-tracing-rust)
+/// - [Tokyo & Tracing](https://tokio.rs/tokio/topics/tracing)
+/// - [request](https://docs.rs/http/1.2.0/src/http/request.rs.html#158-161)
 #[tokio::main]
 async fn main() {
     dotenv::dotenv().ok();
-
+    //////////////////////////////////////
     tracing_subscriber::fmt()
         .pretty()
-        //registry()
-        // .with(
-        //     tracing_subscriber::EnvFilter::try_from_default_env()
-        //         .unwrap_or_else(|_| "example_tokio_postgres=debug".into()),
-        // )
-        // .with(tracing_subscriber::fmt::layer())
+        .with_max_level(tracing::Level::DEBUG)
+        //.event_format(tracing_subscriber::fmt::format())
+        .with_file(true)
+        .with_line_number(true)
         .init();
+    //////////////////////////////////////
+
     info!("Application starting");
 
     let db_path = dotenv::var("DATABASE_PATH").expect("DATABASE_PATH must be set");
-    let migrations_path = dotenv::var("MIGRATIONS_PATH").expect("MIGRATONT_PATH must be set");
+    let migrations_path = dotenv::var("MIGRATIONS_PATH").expect("MIGRATION_PATH must be set");
 
     let options = SqliteConnectOptions::new()
         .filename(db_path)
@@ -76,61 +83,69 @@ async fn main() {
 
     let static_files = ServeDir::new("assets");
 
-    let tera = match Tera::new("templates/**/*") {
-        Ok(t) => t,
+    // create tera instance
+    // from files stored in 'templates' folder
+    let tera_templates = match Tera::new("templates/**/*") {
+        Ok(_t) => _t,
         Err(e) => {
             println!("Parsing error(s): {}", e);
             ::std::process::exit(1);
         }
     };
+    tracing::info!(
+        "
+        SET TEPMPLATES 
+        PAGES: {}, 
+        {:#?}",
+        tera_templates.templates.len(),
+        tera_templates.templates.keys()
+    );
 
+    // create app state
     let state = app_state::AppStateProject {
         pool,
-        tera,
+        tera_templates,
         chat_repo,
     };
 
+    // create shared state
+    // this is shared between all requests
     let shared_app_state = Arc::new(state);
 
-    // build our application with some routes
-    let var_handel_err = axum::middleware::from_fn_with_state(
-        shared_app_state.clone(),
-        // handle error
-        project_middleware::handle_error::<()>,
-    );
+    //TODO: const to be used
+    let main_template = "/";
+    let asset_template = "/assets";
 
-    info!("set up done - getting router");
+    tracing::info!("STARTING MAIN ROUTER");
 
+    // create router
+    // this is the main router
+    // it contains all the routes
     let app = Router::new()
-        // .route(
-        //     "/",
-        //     get(using_connection_pool_extractor).post(using_connection_pool_extractor),
-        // )
-        // Use `merge` to combine routers
-        .nest_service("/assets", static_files)
+        /* .route(
+            "/",
+            get(using_connection_pool_extractor).post(using_connection_pool_extractor),
+            )
+            Use `merge` to combine routers
+        */
+        .nest_service(asset_template, static_files)
         .with_state(shared_app_state.clone())
-        .nest("/", app_router::<()>(shared_app_state.clone()))
-        .layer(var_handel_err)
+        .nest(main_template, app_router(shared_app_state.clone()))
+        // handle err
         .layer(axum::middleware::from_fn_with_state(
             shared_app_state.clone(),
-            project_middleware::extract_user::<()>,
+            project_middleware::handle_error,
+        ))
+        // EXTRACT USER
+        .layer(axum::middleware::from_fn_with_state(
+            shared_app_state.clone(),
+            project_middleware::extract_user,
         ))
         .layer(CookieManagerLayer::new());
 
-    // run it with hyper
-    // open http://0.0.0.0:3000
     let socket_addr = SocketAddr::from(([0, 0, 0, 0], 3001));
-    // assert_eq!("0.0.0.0:3000".parse(), Ok(socket_addr));
 
-    // if let Err(e) = soket_addr {
-    //     // Log the error or handle it appropriately
-    //     tracing::error!("Failed to bind server: {}", e);
-    // } else {
-    //     // Server started successfully
-    //     tracing::info!("Server started on 127.0.0.1:8080");
-    // }
-
-    tracing::debug!("listening on {}", socket_addr);
+    tracing::info!("LISTENING ON {}", socket_addr);
 
     // **Identify the Process Using the Port**:
     //   You can use tools like `lsof` (on Unix-like systems) or `netstat`/`ss` (also on Unix-like systems) to find out which process is using the port.
@@ -142,9 +157,14 @@ async fn main() {
         .serve(app.into_make_service())
         .await
     {
-        Ok(_) => tracing::info!("Server started on {}", socket_addr),
-        Err(e) => tracing::error!("Failed to start server: {}", e),
+        Ok(_) => tracing::info!("OK - Server started on {}", socket_addr),
+        Err(e) => tracing::error!("Err - Failed to start server: {}", e),
     };
+    /* TODO
+        - check and restart service
+        - start tailwindcss
+        - open browser
+    */
 
-    error!("tracing: An error occurred");
+    tracing::error!("tracing: An error occurred");
 }

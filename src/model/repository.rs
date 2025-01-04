@@ -1,11 +1,10 @@
-
 use std::sync::Arc;
 
 use sqlx::sqlite::SqlitePool;
 use sqlx::{
     //Row,
     Sqlite,
-    Transaction
+    Transaction,
 };
 
 use super::model::{Chat, ChatMessagePair};
@@ -26,6 +25,15 @@ impl ChatRepository {
         .await
     }
 
+    /**
+    # fn delete_chat
+    delete a chat by id in the database
+    ## params:
+    - chat_id: i64
+    ## returns:
+    - rows_affected: u64
+    - sqlx::Error
+    */
     pub async fn delete_chat(&self, chat_id: i64) -> sqlx::Result<u64> {
         let rows_affected = sqlx::query!("DELETE FROM chats WHERE id = ?", chat_id)
             .execute(&*self.pool)
@@ -152,6 +160,7 @@ mod tests {
     use super::*;
 
     async fn setup() -> (Arc<SqlitePool>, ChatRepository, i64) {
+        tracing::info!("TEST");
         let x = std::env::var("DATABASE_URL").unwrap_or_else(|_| "sqlite:db.db".to_string());
         let pool = SqlitePool::connect(&x).await.unwrap();
 

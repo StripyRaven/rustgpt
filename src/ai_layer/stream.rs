@@ -1,3 +1,14 @@
+/**
+ * crate stream
+ * - stream.rs
+ * functions:
+ * - list_engines
+ * - generate_sse_stream
+ * Structs:
+ * - Model
+ * - ModelList
+ *
+ */
 use axum::Error;
 use reqwest::header::{HeaderValue, AUTHORIZATION, CONTENT_TYPE};
 use reqwest_eventsource::{Event as ReqwestEvent, EventSource as ReqwestEventSource};
@@ -23,18 +34,27 @@ struct ModelList {
     object: String,
     data: Vec<Model>,
 }
-
-/// Param api_key: &str
+/**
+ # fh list_engines
+ Param api_key: &str
+ Return Vec<Model> List all models
+*/
 pub async fn list_engines(api_key: &str) -> Result<Vec<Model>, reqwest::Error> {
+    tracing::info!("ENTER AI LIST");
     let client = reqwest::Client::new();
     let res: ModelList = client
+        // "http://localhost:11434"
         .get("https://api.openai.com/v1/models")
         .bearer_auth(api_key)
         .send()
         .await?
         .json()
         .await?;
-
+    tracing::info!(
+        "
+        EXIT AI LIST WIYH {:?}",
+        res.data
+    );
     Ok(res.data)
 }
 
@@ -59,6 +79,7 @@ pub async fn generate_sse_stream(
     // Your OpenAI API key
 
     // The API endpoint for chat completions
+    // To be changed or optional
     let url = "https://api.openai.com/v1/chat/completions";
 
     let system_message = json!({"role": "system", "content": "You are a helpful assistant."});
@@ -158,8 +179,7 @@ pub async fn generate_sse_stream(
                 if sender.send(Err(axum::Error::new(err))).await.is_err() {
                     break; // Receiver has dropped, stop sending.
                 }
-            }
-            //_ => (),
+            } //_ => (),
         }
     }
 

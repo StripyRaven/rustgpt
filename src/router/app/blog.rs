@@ -1,5 +1,5 @@
 // LOCAL
-use crate::model::{app_state::AppStateProject, user::User};
+use crate::model::{app_state::AppStateProject, user_dto::UserDTO};
 
 use axum::{
     extract::{Extension, Path, State},
@@ -22,9 +22,10 @@ struct BlogArticlePreview {
 
 pub async fn blog(
     State(state): State<Arc<AppStateProject>>,
-    Extension(current_user): Extension<Option<User>>,
+    Extension(current_user): Extension<Option<UserDTO>>,
 ) -> Result<Html<String>, StatusCode> {
     // list all directories in ./templates/articles, extract a tuple (dir_name, serde_parsed dir_name/body.json)
+    tracing::info!("Enter BLOG");
     let mut previews: Vec<(String, BlogArticlePreview)> = Vec::new();
     let base_path = std::path::Path::new("./templates/articles");
 
@@ -57,7 +58,7 @@ pub async fn blog(
                     }
                 }
                 Err(e) => {
-                    eprintln!("Error parsing JSON for directory {:?}: {}", path, e);
+                    tracing::error!("Error parsing JSON for directory {:?}: {}", path, e);
                 }
             }
         }
@@ -66,13 +67,13 @@ pub async fn blog(
     let mut context = Context::new();
     context.insert("previews", &previews);
 
-    let home = state.tera.render("views/blog.html", &context).unwrap();
+    let home = state.tera_templates.render("views/blog.html", &context).unwrap();
 
     let mut context = Context::new();
     context.insert("view", &home);
     context.insert("current_user", &current_user);
     context.insert("with_footer", &true);
-    let rendered = state.tera.render("views/main.html", &context).unwrap();
+    let rendered = state.tera_templates.render("views/main.html", &context).unwrap();
 
     Ok(Html(rendered))
 }
@@ -81,21 +82,22 @@ pub async fn blog(
 pub async fn blog_by_slug(
     Path(slug): Path<String>,
     State(state): State<Arc<AppStateProject>>,
-    Extension(current_user): Extension<Option<User>>,
+    Extension(current_user): Extension<Option<UserDTO>>,
 ) -> Result<Html<String>, StatusCode> {
+    tracing::info!("Enter BLOG");
     let template = format!("articles/{}/body.md", slug);
 
-    match state.tera.get_template(&template) {
+    match state.tera_templates.get_template(&template) {
         Ok(_) => {
             // Template exists
             let context = Context::new();
-            let article = state.tera.render(&template, &context).unwrap();
+            let article = state.tera_templates.render(&template, &context).unwrap();
 
             let article_html = comrak::markdown_to_html(&article, &comrak::Options::default());
             let mut context = Context::new();
             context.insert("article", &article_html);
             let blog = state
-                .tera
+                .tera_templates
                 .render("components/article-wrapper.html", &context)
                 .unwrap();
 
@@ -103,7 +105,7 @@ pub async fn blog_by_slug(
             context.insert("view", &blog);
             context.insert("current_user", &current_user);
             context.insert("with_footer", &true);
-            let rendered = state.tera.render("views/main.html", &context).unwrap();
+            let rendered = state.tera_templates.render("views/main.html", &context).unwrap();
 
             Ok(Html(rendered))
         }

@@ -47,7 +47,7 @@ pub fn verify_email(user_email: Option<String>) -> Result<String, UserValidation
     }
 }
 
-fn get_created_at(user: &User) -> NaiveDateTime {
+fn get_created_at(user: &Use) -> NaiveDateTime {
     match user.created_at {
         Some(dt) => dt,
         None => NaiveDate::from_ymd_opt(1900, 1, 1)
