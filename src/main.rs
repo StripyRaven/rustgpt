@@ -43,11 +43,20 @@ async fn main() {
     dotenv::dotenv().ok();
     //////////////////////////////////////
     tracing_subscriber::fmt()
-        .pretty()
+        //.pretty()
         .with_max_level(tracing::Level::DEBUG)
-        //.event_format(tracing_subscriber::fmt::format())
-        .with_file(true)
-        .with_line_number(true)
+        .event_format(
+            tracing_subscriber::fmt::format()
+                //.without_time(false)
+                .with_file(true)
+                .with_line_number(true)
+                .with_target(true)
+                .with_thread_ids(true)
+                .with_thread_names(true)
+                .with_source_location(true)
+                //.pretty(),
+                .compact(),
+        )
         .init();
     //////////////////////////////////////
 

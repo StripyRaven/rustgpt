@@ -27,7 +27,9 @@ pub async fn home_app(
 ) -> Html<String> {
     tracing::info!(
         "
-        ENTER HOME"
+        ENTER HOME
+        CURRENT_USER: {:?}",
+        &current_user
     );
 
     let mut context = Context::new();

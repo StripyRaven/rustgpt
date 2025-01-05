@@ -116,12 +116,18 @@ pub async fn chat(
     context.insert("models", &MODELS);
     context.insert("selected_model", &selected_model);
     context.insert("user_chats", &user_chats);
-    let home = state.tera_templates.render("views/chat.html", &context).unwrap();
+    let home = state
+        .tera_templates
+        .render("views/chat.html", &context)
+        .unwrap();
 
     let mut context = Context::new();
     context.insert("view", &home);
     context.insert("current_user_data", &current_user_data);
-    let rendered = state.tera_templates.render("views/main.html", &context).unwrap();
+    let rendered = state
+        .tera_templates
+        .render("views/main.html", &context)
+        .unwrap();
 
     Html(rendered)
 }
@@ -144,7 +150,12 @@ pub async fn new_chat(
     Extension(current_user_data): Extension<Option<UserDTO>>,
     Form(new_chat): Form<NewChat>,
 ) -> Result<Response<String>, ChatError> {
-    tracing::info!("Enter NEW_CHAT");
+    tracing::info!(
+        "
+    NEW_CHAT
+    ENTER"
+    );
+
     let current_user_data = current_user_data.unwrap();
 
     let chat_id = state
@@ -221,12 +232,18 @@ pub async fn chat_by_id(
     context.insert("user_chats", &user_chats);
     context.insert("selected_model", &selected_model);
 
-    let home = state.tera_templates.render("views/chat.html", &context).unwrap();
+    let home = state
+        .tera_templates
+        .render("views/chat.html", &context)
+        .unwrap();
 
     let mut context = Context::new();
     context.insert("view", &home);
     context.insert("current_user_data", &current_user_data);
-    let rendered = state.tera_templates.render("views/main.html", &context).unwrap();
+    let rendered = state
+        .tera_templates
+        .render("views/main.html", &context)
+        .unwrap();
 
     Ok(Html(rendered))
 }

@@ -51,7 +51,11 @@ use std::sync::Arc;
  *  * [Axum](https://www.shuttle.dev/blog/2023/12/06/using-axum-rust)
  */
 pub fn app_router(state: Arc<AppStateProject>) -> Router {
-    tracing::info!("START APP_ROUTER");
+    tracing::info!(
+        "
+    APP_ROUTER
+    START"
+    );
     // set router for app
     let chat_router = Router::new()
         .route("/", get(chat).post(new_chat))
@@ -63,13 +67,26 @@ pub fn app_router(state: Arc<AppStateProject>) -> Router {
             state.clone(),
             valid_openai_api_key,
         ))
-        .layer(axum::middleware::from_fn_with_state(state.clone(), auth));
+        .layer(axum::middleware::from_fn_with_state(state.clone(), auth)); // auth 1
 
-    tracing::info!("CHAT ROUTER init done");
+    tracing::info!(
+        "
+    APP_ROUTER
+    CHAT ROUTER INIT DONE
+    START SETTINGGS ROUTER"
+    );
 
+    // set router for settings
     let settings_router = Router::new()
         .route("/", get(settings).post(settings_openai_api_key))
-        .layer(axum::middleware::from_fn_with_state(state.clone(), auth));
+        .layer(axum::middleware::from_fn_with_state(state.clone(), auth)); // auth 2
+
+    tracing::info!(
+        "
+    APP_ROUTER
+    SETTINGS ROUTER DONE
+    START MAIN ROUTER"
+    );
 
     Router::new()
         .route("/", get(home_app))

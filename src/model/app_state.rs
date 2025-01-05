@@ -1,4 +1,4 @@
-#![allow(dead_code)]
+//#![allow(dead_code)]
 
 use super::repository::ChatRepository;
 use sqlx::{Pool, Sqlite};

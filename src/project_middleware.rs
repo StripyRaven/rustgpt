@@ -28,6 +28,8 @@ use axum::{
         Response,
     },
 };
+use futures::TryFutureExt;
+use reqwest::header::IF_NONE_MATCH;
 use tracing::instrument::WithSubscriber;
 //////////////////////////////////////////////////////////////////////
 use sqlx::Error as SqlError;
@@ -50,7 +52,11 @@ pub async fn extract_user(
     mut req: Request<Body>,
     next: Next,
 ) -> Result<Response<Body>, StatusCode> {
-    tracing::info!("Enter EXTRACT USER MIDDLEWARE");
+    tracing::info!(
+        "
+    EXTRACT USER
+    ENTER MIDDLEWARE"
+    );
     let session_name = cookies.get(SESSION_NAME);
 
     let user_id_session: i64 = match session_name {
@@ -65,9 +71,11 @@ pub async fn extract_user(
     if user_id_session == ID_USER_NONE {
         tracing::info!(
             "
-            SESSION USER.ID: {}
-            CURRENT USER IS NONE
-            NOT AUTHORIZED",
+        EXTRACT USER 
+        SESSION USER.ID: {}
+        DETERMINE ON STARTUP
+        NONE(CURRENT_USER)
+        NOT AUTHORIZED",
             &user_id_session
         );
         // TODO: go to main or sign up
@@ -75,10 +83,16 @@ pub async fn extract_user(
         return Ok(next.run(req).await);
     }
 
-    tracing::info!("SESSION USER.ID: {}", &user_id_session);
+    tracing::info!(
+        "
+    EXTRACT USER 
+    SESSION USER.ID: {}
+    EXTRACT USER DATA FM DB",
+        &user_id_session
+    );
 
     // Get the user - turn to function
-    let user_tmp = sqlx::query_as!(
+    match sqlx::query_as!(
         UserDTO,
         r#"SELECT users.*, settings.openai_api_key
             FROM users
@@ -88,22 +102,21 @@ pub async fn extract_user(
         user_id_session
     )
     .fetch_optional(&*state.pool)
-    .await;
-
-    tracing::info!("USER DATA EXTRACTED WITH ID: {}", user_id_session);
-
-    match user_tmp {
+    .await
+    {
         Ok(Some(current_user)) => {
             // insert the current user into a request extension, so the handler can
             // extract it, and make sure `user` is not used after this point.
             req.extensions_mut().insert(Some(current_user.clone()));
             tracing::info!(
                 "
+            EXTRACT USER 
             OK(SOME  USER) EXTRACTED, insert user to extension
             id:            {}
             email:         {}
             password       {}
             openai_api_key {:?}
+            ------------------
             RESPONSE HEADERS: {:?}",
                 current_user.id,
                 current_user.email,
@@ -115,7 +128,7 @@ pub async fn extract_user(
             Ok(run.await)
         }
         // Ok(None) or NotFound => TODO to be None Option<UserDTO>
-        Ok(None) | Err(SqlError::RowNotFound) => {
+        Ok(None) => {
             // Handle specific error case for missing user
             req.extensions_mut().insert(None::<UserDTO>);
             tracing::info!("CURRENT USER IS NONE: {}", &user_id_session);
@@ -123,8 +136,29 @@ pub async fn extract_user(
             // extract it, and make sure `user` is not used after this point
             Ok(next.run(req).await)
         }
+        Err(SqlError::RowNotFound) => {
+            tracing::error!(
+                "
+            EXTRACT USER 
+            ERROR 1 DB EXTRACTION
+            TAKE A LOOK !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
+            );
+            Err(StatusCode::INTERNAL_SERVER_ERROR)
+        }
+        Err(SqlError::PoolTimedOut) => {
+            tracing::error!(
+                "
+            EXTRACT USER
+            ERROR 2 TRACING TAKE A LOOK !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
+            );
+            Err(StatusCode::INTERNAL_SERVER_ERROR)
+        }
         Err(_) => {
-            tracing::error!("ERROR TRACING TAKE A LOOK");
+            tracing::error!(
+                "
+            EXTRACT USER 
+            ERROR 3 TRACING TAKE A LOOK !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
+            );
             Err(StatusCode::INTERNAL_SERVER_ERROR)
         }
     }
@@ -231,7 +265,7 @@ pub async fn valid_openai_api_key(
 pub async fn handle_error(
     Extension(current_user): Extension<Option<UserDTO>>,
     State(state): State<Arc<AppStateProject>>,
-    request: Request<Body>,
+    req: Request<Body>,
     next: Next,
 ) -> Result<Response<Body>, StatusCode>
 //where
@@ -239,19 +273,24 @@ pub async fn handle_error(
 {
     tracing::info!(
         "
-        ENTER HANDLE_ERROR MIDDLEWARE"
+            HANDLE_ERROR 
+            ENTER MIDDLEWARE
+            CURRENT_USER: {:?}
+            SET STATUS CODE",
+        &current_user
     );
 
-    let response = next.run(request).await;
+    let response = next.run(req).await;
 
     let status_code = response.status().as_u16();
     let status_text = response.status().to_string();
 
     tracing::info!(
         "
-        STATUS CODE:    {}
-        MESSAGE:        {}
-        RESP.HEADER     {:?}",
+            HANDLE_ERROR
+            STATUS CODE:    {}
+            MESSAGE:        {}
+            RESP.HEADER     {:?}",
         &status_code,
         &status_text,
         &response.headers().keys()
@@ -282,19 +321,19 @@ pub async fn handle_error(
 
             // Result<Response, StatusCode>
             tracing::info!("GO TO {}", &rendered);
-            let rsp_tmp = Html(rendered).into_response();
-            Ok(rsp_tmp)
+            Ok(Html(rendered).into_response())
         }
         _ => {
             // if response.status().as_u16() < 400 {
             tracing::info!(
                 "
-            STATUS CODE:    {},
-            HEAD.PARTS:     {:?},
+            HANDLE_ERROR
+            STATUS CODE:    {} < 400,
+            HEADer.PARTS:   {:?},
             BODY.PARTS:     {:?}",
                 &status_code,
                 //&response.headers().get("Content-Type"),
-                &response.headers().get_all("inner"),
+                &response.headers().keys(),
                 &response.body().with_current_subscriber(),
             );
             Ok(response)
@@ -314,7 +353,7 @@ pub async fn handle_error(
  * - `views/error.html`
  */
 pub fn error_response(code: u16, message: &str) -> Response {
-    tracing::info!("Enter ERROR RESPONSE");
+    tracing::info!("ERROR RESPONSE");
     let to = format!("/error?code={}&message={}", code, message);
     let r = Redirect::to(&to);
     let mut r = r.into_response();

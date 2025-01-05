@@ -25,11 +25,19 @@ pub async fn settings_openai_api_key(
     Extension(current_user): Extension<Option<UserDTO>>, //Correct user
     Form(set_openai_api_key): Form<OpenAiAPIKey>,
 ) -> Result<Redirect, StatusCode> {
-    tracing::info!("SETTING OPEN AI KEY");
+    tracing::info!(
+        "
+    SETTING OPEN AI KEY"
+    );
 
     let id = current_user.unwrap().id; // did it true?
 
-    tracing::info!("USER.ID: {}", &id);
+    tracing::info!(
+        "
+    USER.ID: {}
+    INSERT KEY TO BD",
+        &id
+    );
 
     sqlx::query!(
         r#"INSERT INTO settings (user_id, openai_api_key) VALUES ($1, $2) ON CONFLICT (user_id) DO UPDATE SET openai_api_key = $2"#,
