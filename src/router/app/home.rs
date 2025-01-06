@@ -51,6 +51,8 @@ pub async fn home_app(
         .render("views/main.html", &context)
         .unwrap();
 
+    //tracing::info!("RENDERED: {}", rendered);
+
     Html(rendered)
 }
 

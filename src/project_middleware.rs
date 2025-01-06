@@ -92,6 +92,8 @@ pub async fn extract_user(
     );
 
     // Get the user - turn to function
+    // TODO: keep session status and authed user ti avoid db request
+    //  SOME(USER) and so on ....
     match sqlx::query_as!(
         UserDTO,
         r#"SELECT users.*, settings.openai_api_key
@@ -320,7 +322,7 @@ pub async fn handle_error(
                 .unwrap();
 
             // Result<Response, StatusCode>
-            tracing::info!("GO TO {}", &rendered);
+            // tracing::info!("GO TO {}", &rendered); // full HTML rendered page
             Ok(Html(rendered).into_response())
         }
         _ => {

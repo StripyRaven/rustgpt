@@ -79,7 +79,7 @@ pub fn app_router(state: Arc<AppStateProject>) -> Router {
     // set router for settings
     let settings_router = Router::new()
         .route("/", get(settings).post(settings_openai_api_key))
-        .layer(axum::middleware::from_fn_with_state(state.clone(), auth)); // auth 2
+        .layer(axum::middleware::from_fn_with_state(state.clone(), auth)); //auth 2
 
     tracing::info!(
         "
@@ -98,10 +98,10 @@ pub fn app_router(state: Arc<AppStateProject>) -> Router {
         .route("/blog/:slug", get(blog_by_slug))
         .nest("/chat", chat_router)
         .nest("/settings", settings_router)
-        .layer(axum::middleware::from_fn_with_state(
-            state.clone(),
-            handle_error,
-        ))
-        .with_state(state)
+        //.layer(axum::middleware::from_fn_with_state(
+        //  state.clone(),
+        //handle_error,
+        //))
+        .with_state(state.clone())
     ///////////////////////////////////////////////////////////////////////////////////////////////////
 }

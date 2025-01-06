@@ -28,11 +28,17 @@ pub async fn login(State(state): State<Arc<AppStateProject>>) -> Html<String> {
     tracing::info!("Enter LOGIN");
     let mut context = Context::new();
     context.insert("name", "World");
-    let home = state.tera_templates.render("views/login.html", &context).unwrap();
+    let home = state
+        .tera_templates
+        .render("views/login.html", &context)
+        .unwrap();
 
     let mut context = Context::new();
     context.insert("view", &home);
-    let rendered = state.tera_templates.render("views/main.html", &context).unwrap();
+    let rendered = state
+        .tera_templates
+        .render("views/main.html", &context)
+        .unwrap();
 
     Html(rendered)
 }
@@ -143,11 +149,17 @@ pub async fn signup(State(state): State<Arc<AppStateProject>>) -> Html<String> {
     // TODO: Hash password
     let mut context = Context::new();
     context.insert("name", "World");
-    let home = state.tera_templates.render("views/signup.html", &context).unwrap();
+    let home = state
+        .tera_templates
+        .render("views/signup.html", &context)
+        .unwrap();
 
     let mut context = Context::new();
     context.insert("view", &home);
-    let rendered = state.tera_templates.render("views/main.html", &context).unwrap();
+    let rendered = state
+        .tera_templates
+        .render("views/main.html", &context)
+        .unwrap();
 
     Html(rendered)
 }
@@ -226,15 +238,15 @@ pub async fn form_signup(
 pub async fn logout(cookies: Cookies) -> Result<Redirect, StatusCode> {
     tracing::info!("Start - logout");
     let logout_template = "/";
-    let default_domain = "localhost";
+    //let default_domain = "localhost";
     let session_name = "rust-ai-session";
     let mut cookie: Cookie = Cookie::build((session_name, ""))
-        .domain(default_domain)
+        //.domain(default_domain)
         .path(logout_template)
         // .secure(true)
         .http_only(true)
         .into();
-    // .finish();
+    //.finish();
 
     cookie.make_removal();
 

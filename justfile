@@ -1,6 +1,5 @@
 set dotenv-load
 
-
 init:
 	cargo install cargo-watch
 	cargo install sqlx-cli
@@ -11,7 +10,10 @@ init:
 dev-server:
 	cargo watch -w src -w templates -w tailwind.config.js -w input.css -x run
 
-dev-server-debug:
+#dev-check:
+#cargo check --quiet --workspace --message-format=json --all-targets --keep-going
+
+dev-srv:
 	cargo watch --clear --no-restart -w src -w templates -w tailwind.config.js -w input.css -x run
 
 dev-tailwind:
@@ -33,9 +35,6 @@ db-reset:
   sqlx database drop && sqlx database create && sqlx migrate run --source $MIGRATIONS_PATH
   sqlite3 $DATABASE_PATH < seeds/seed-users.sql
 
-dev-w:
-    cargo watch --clear --no-restart -w
-
 dev:
 	#!/bin/sh
 	pid1=$!
@@ -46,12 +45,10 @@ dev:
 	wait $pid1 $pid2
 # open http://0.0.0.0:3001
 
-
 dev-debug:
 	#!/bin/sh
-	just dev-tailwind &
 	pid1=$!
-	RUST_BACKTRACE=1 just dev-server-debug &
+	RUST_BACKTRACE=1 just dev-watch-debug &
 	pid2=$!
 	trap "kill $pid1 $pid2" EXIT
 	wait $pid1 $pid2

@@ -1,4 +1,4 @@
-//#![allow(dead_code)]
+#![allow(dead_code)]
 
 use super::repository::ChatRepository;
 use sqlx::{Pool, Sqlite};
@@ -12,4 +12,9 @@ pub struct AppStateProject {
     pub chat_repo: ChatRepository,
 }
 
+// it a type definition
 pub type SharedAppState = Arc<Mutex<AppStateProject>>;
+
+// impl SharedAppState {
+//     pub fn new(aps: AppStateProject) -> Self {}
+// }

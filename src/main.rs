@@ -1,39 +1,43 @@
 #![allow(unused_imports)]
-///////////////////////////////////////////////////////////////////////////////
+// ---------------------------------------------------------------------------
 // LOCAL
+// ---------------------------------------------------------------------------
 mod model;
 mod project_middleware;
 use model::{app_state, repository::ChatRepository};
 mod router;
 use router::app::app_router::app_router;
 mod ai_layer;
-///////////////////////////////////////////////////////////////////////////////
+// ---------------------------------------------------------------------------
 // EXTERNAL
+// ---------------------------------------------------------------------------
 use axum::Router;
-
-use dotenv;
-
+// use dotenv;
 // use serde::Serialize;
-
 use sqlx::{
     migrate::Migrator,
     sqlite::{SqliteConnectOptions, SqlitePoolOptions},
     //Pool, Sqlite,
 };
-use std::{net::SocketAddr, path::Path, sync::Arc, time::Duration};
+use std::{
+    net::SocketAddr,
+    path::Path,
+    sync::{Arc, Mutex},
+    time::Duration,
+};
 use tera::Tera;
 use tower_cookies::CookieManagerLayer;
 use tower_http::services::ServeDir;
-use tracing::{debug, error, info};
+use tracing::{debug, error, info, Level};
 use tracing_subscriber::{
     filter::{EnvFilter, LevelFilter},
     fmt,
     prelude::*,
     util::SubscriberInitExt,
 };
-///////////////////////////////////////////////////////////////////////////////
+// ----------------------------------------------------------------------------
 // MAIN
-///////////////////////////////////////////////////////////////////////////////
+// ----------------------------------------------------------------------------
 
 /// - [Tracing](https://www.shuttle.dev/blog/2024/01/09/getting-started-tracing-rust)
 /// - [Tokyo & Tracing](https://tokio.rs/tokio/topics/tracing)
@@ -41,24 +45,30 @@ use tracing_subscriber::{
 #[tokio::main]
 async fn main() {
     dotenv::dotenv().ok();
-    //////////////////////////////////////
-    tracing_subscriber::fmt()
-        //.pretty()
-        .with_max_level(tracing::Level::DEBUG)
-        .event_format(
-            tracing_subscriber::fmt::format()
-                //.without_time(false)
-                .with_file(true)
-                .with_line_number(true)
-                .with_target(true)
-                .with_thread_ids(true)
-                .with_thread_names(true)
-                .with_source_location(true)
-                //.pretty(),
-                .compact(),
-        )
-        .init();
-    //////////////////////////////////////
+    // ---------------------------------------------------------
+    // "TRACING SUBSCRIBER INIT"
+    //----------------------------------------------------------
+    if dotenv::var("LOG_FORMAT").is_ok_and(|log| log == "JSON") {
+        //tracing_subscriber::fmt()
+        tracing_subscriber::fmt::format().json();
+    } else {
+        tracing_subscriber::fmt()
+            .with_max_level(Level::DEBUG)
+            .event_format(
+                tracing_subscriber::fmt::format()
+                    //.without_time(false)
+                    .with_file(true)
+                    .with_line_number(true)
+                    .with_target(true)
+                    .with_thread_ids(true)
+                    .with_thread_names(true)
+                    .with_source_location(true)
+                    //.pretty(),
+                    .compact(),
+            )
+            .init();
+    }
+    //---------------------------------------------------------
 
     info!("Application starting");
 
@@ -103,8 +113,8 @@ async fn main() {
     };
     tracing::info!(
         "
-        SET TEPMPLATES 
-        PAGES: {}, 
+        SET TEPMPLATES
+        PAGES: {},
         {:#?}",
         tera_templates.templates.len(),
         tera_templates.templates.keys()
@@ -119,13 +129,18 @@ async fn main() {
 
     // create shared state
     // this is shared between all requests
-    let shared_app_state = Arc::new(state);
+    let shared_app_state = Arc::new(state.clone());
+
+    let s = Arc::new(Mutex::new(state));
 
     //TODO: const to be used
     let main_template = "/";
     let asset_template = "/assets";
 
-    tracing::info!("STARTING MAIN ROUTER");
+    tracing::info!(
+        "
+    STARTING MAIN ROUTER"
+    );
 
     // create router
     // this is the main router
@@ -139,13 +154,14 @@ async fn main() {
         */
         .nest_service(asset_template, static_files)
         .with_state(shared_app_state.clone())
+        // app_router
         .nest(main_template, app_router(shared_app_state.clone()))
         // handle err
         .layer(axum::middleware::from_fn_with_state(
             shared_app_state.clone(),
             project_middleware::handle_error,
         ))
-        // EXTRACT USER
+        // extract user
         .layer(axum::middleware::from_fn_with_state(
             shared_app_state.clone(),
             project_middleware::extract_user,
