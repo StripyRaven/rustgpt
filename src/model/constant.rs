@@ -12,7 +12,9 @@ pub const SESSION_COOKIE_NAME: &str = "rust-ai-cookie";
 
 pub const SESSION_SECRET: &str = "rust-ai-secret";
 pub const SESSION_TIMEOUT: usize = 1000;
-// TEMPLATE
-pub const ERR_PAGE_TEMPLATE: &str = "views/error.html";
-pub const MAIN_TEMPLATE: &str = "views/main.html";
-pub const ASSET_TEMPLATE: &str = "/assets";
+// -----------------------------------------------------------------------
+// TEMPLATES AND ASSETS ROUTES
+pub const ERR_PAGE_TEMPLATE: &'static str = "views/error.html";
+pub const MAIN_ROUTE: &'static str = "/";
+pub const MAIN_TEMPLATE: &'static str = "views/main.html";
+pub const ASSET_ROUTE: &'static str = "/assets";

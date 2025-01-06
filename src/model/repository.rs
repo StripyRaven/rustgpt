@@ -9,7 +9,7 @@ use sqlx::{
 
 use super::model::{Chat, ChatMessagePair};
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct ChatRepository {
     pub pool: Arc<SqlitePool>,
 }

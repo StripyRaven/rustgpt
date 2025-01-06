@@ -1,6 +1,6 @@
-/////////////////////////////////////////////////////////////////////
+// -----------------------------------------------------------------------
 // Locals
-/////////////////////////////////////////////////////////////////////
+// -----------------------------------------------------------------------
 //crate super::auth;
 use super::auth::{form_signup, login, login_form, logout, signup};
 use super::blog::{blog, blog_by_slug};
@@ -8,14 +8,14 @@ use super::chat::{chat, chat_add_message, chat_by_id, delete_chat, generate_chat
 use super::error::error;
 use super::home::home_app;
 use super::settings::{settings, settings_openai_api_key};
-use crate::model::app_state::AppStateProject;
+use crate::model::app_state::{AppStateProject, SharedAppState};
 use crate::model::project_error::ErrorMessage;
 use crate::project_middleware::{auth, handle_error, valid_openai_api_key};
 
-//use axum::error_handling;
-/////////////////////////////////////////////////////////////////////
+use axum::error_handling;
+// -----------------------------------------------------------------------
 // EXTERNAL
-/////////////////////////////////////////////////////////////////////
+// -----------------------------------------------------------------------
 use axum::{
     body::Body,
     http::Request,
@@ -50,7 +50,8 @@ use std::sync::Arc;
  * - /error/:code/:message/:description
  *  * [Axum](https://www.shuttle.dev/blog/2023/12/06/using-axum-rust)
  */
-pub fn app_router(state: Arc<AppStateProject>) -> Router {
+//#[axum::debug_handler]
+pub fn app_router(state: SharedAppState) -> Router {
     tracing::info!(
         "
     APP_ROUTER
@@ -103,5 +104,4 @@ pub fn app_router(state: Arc<AppStateProject>) -> Router {
         //handle_error,
         //))
         .with_state(state.clone())
-    ///////////////////////////////////////////////////////////////////////////////////////////////////
 }

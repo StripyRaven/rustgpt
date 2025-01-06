@@ -8,9 +8,13 @@
  * - delete chat
  * - delete chat message
  */
-///////////////////////////////////////////////////////////////////////////////////////////////////
+// -------------------------------------------------------------------------------------
 // LOCAL
-use crate::model::{app_state::AppStateProject, user_dto::UserDTO};
+use crate::model::{
+    app_state::{AppStateProject, SharedAppState},
+    repository::ChatRepository,
+    user_dto::UserDTO,
+};
 
 use crate::{
     ai_layer::stream::{generate_sse_stream, list_engines, GenerationEvent},
@@ -109,7 +113,7 @@ pub async fn chat(
         .await
         .unwrap();
 
-    // TODO! default selection for model
+    // TODO: default selection for model
     let selected_model = MODELS.iter().find(|&f| f.1 == "qwen2.5-coder").unwrap();
 
     let mut context = Context::new();
@@ -262,7 +266,11 @@ pub async fn chat_add_message(
     Extension(_current_user_data): Extension<Option<UserDTO>>,
     Form(chat_add_message): Form<ChatAddMessage>,
 ) -> Result<Html<String>, ChatError> {
-    tracing::info!("Enter CHAT_ADD_MESSAGE");
+    tracing::info!(
+        "
+        CHAT_ADD_MESSAGE
+        ENTER"
+    );
     let message = chat_add_message.message;
     state
         .chat_repo
@@ -275,21 +283,35 @@ pub async fn chat_add_message(
     context.insert("chat_id", &chat_id);
     let update = state
         .tera_templates
-        .render("htmx_updates/add_message.html", &context)
+        .render("htmx_updates/add_message.html", &context) //TODO: refactor
         .unwrap();
 
     Ok(Html(update))
 }
 
-#[axum::debug_handler]
+//#[axum::debug_handler]
 pub async fn generate_chat(
     Extension(current_user): Extension<Option<UserDTO>>,
     Path(chat_id): Path<i64>,
-    State(state): State<Arc<AppStateProject>>,
+    State(state): State<SharedAppState>,
 ) -> Result<Sse<impl tokio_stream::Stream<Item = Result<Event, axum::Error>>>, ChatError> {
-    tracing::info!("Enter GENERATE_CHAT");
-    let chat_message_pairs = state.chat_repo.retrieve_chat(chat_id).await.unwrap();
-    let key = current_user // нетт проверок но и нет заимствований срока жизни
+    // --------------------------------------
+    tracing::info!(
+        "
+    GENERATE_CHAT
+    ENTER"
+    );
+    // --------------------------------------
+    let app_state: std::sync::Mutex<AppStateProject> = Arc::try_unwrap(state).unwrap();
+    let state: &AppStateProject = &*app_state.lock().unwrap();
+    let chat_repo: &ChatRepository = &state.chat_repo;
+    // --------------------------------------
+    let chat_message_pairs: Vec<ChatMessagePair> = chat_repo
+        .retrieve_chat(chat_id)
+        .await
+        .map_err(|_| ChatError::Other)?; // cose return ChatError
+
+    let key = current_user // check less
         .unwrap()
         .openai_api_key
         .unwrap_or(String::new());
@@ -323,12 +345,12 @@ pub async fn generate_chat(
 
     // Convert the receiver into a Stream that can be used by Sse
     // let event_stream = ReceiverStream::new(receiver);
-    let state_clone = Arc::clone(&state);
+    let state_clone = state.clone();
 
     let receiver_stream = ReceiverStream::new(receiver);
     let initial_state = (receiver_stream, String::new()); // Initial state with an empty accumulator
     let event_stream = stream::unfold(initial_state, move |(mut rc, mut accumulated)| {
-        let state_clone = Arc::clone(&state_clone); // Clone the Arc here
+        let state_clone = state_clone.clone();
         async move {
             match rc.next().await {
                 Some(Ok(event)) => {
@@ -339,18 +361,20 @@ pub async fn generate_chat(
                             // Return the accumulated data as part of the SSE event
                             let html =
                                 comrak::markdown_to_html(&accumulated, &comrak::Options::default());
-                            let s = format!(r##"<div>{}<div>"##, html);
+                            let s = format!(r##"<div>{}</div>"##, html);
 
                             Some((Ok(Event::default().data(s)), (rc, accumulated)))
                         }
                         GenerationEvent::End(text) => {
                             println!("accumulated: {:?}", accumulated);
 
-                            state_clone
+                            if let Err(e) = state_clone
                                 .chat_repo
                                 .add_ai_message_to_pair(lat_message_id, &accumulated)
                                 .await
-                                .unwrap();
+                            {
+                                tracing::error!("Error adding AI message to pair: {:?}", e);
+                            }
 
                             let html =
                                 comrak::markdown_to_html(&accumulated, &comrak::Options::default());
@@ -371,7 +395,7 @@ pub async fn generate_chat(
                 }
                 Some(Err(e)) => {
                     // Handle error without altering the accumulator
-                    Some((Err(axum::Error::new(e)), (rc, accumulated)))
+                    Some((Err(e), (rc, accumulated)))
                 }
                 None => None, // When the receiver stream ends, finish the stream
             }
@@ -380,12 +404,15 @@ pub async fn generate_chat(
 
     Ok(Sse::new(event_stream))
 }
-
+// --------------------------------------
 pub async fn delete_chat(
     Path(chat_id): Path<i64>,
     State(state): State<Arc<AppStateProject>>,
 ) -> Result<Html<String>, ChatError> {
-    tracing::info!("Enter DELETE_CHAT");
+    tracing::info!(
+        "
+        DELETE_CHAT"
+    );
     state.chat_repo.delete_chat(chat_id).await.unwrap();
 
     let html = r#"<div class="hidden"></div>"#;

@@ -12,7 +12,7 @@ mod ai_layer;
 // EXTERNAL
 // ---------------------------------------------------------------------------
 use axum::Router;
-// use dotenv;
+use dotenv;
 // use serde::Serialize;
 use sqlx::{
     migrate::Migrator,
@@ -129,11 +129,11 @@ async fn main() {
 
     // create shared state
     // this is shared between all requests
-    let shared_app_state = Arc::new(state.clone());
+    // let state = Arc::new(state.clone());
 
-    let s = Arc::new(Mutex::new(state));
+    let _s = Arc::new(Mutex::new(state));
 
-    //TODO: const to be used
+    //TODO: const to be used or enum as routes registry
     let main_template = "/";
     let asset_template = "/assets";
 
@@ -153,17 +153,18 @@ async fn main() {
             Use `merge` to combine routers
         */
         .nest_service(asset_template, static_files)
-        .with_state(shared_app_state.clone())
+        // change on _s to use the state
+        .with_state(_s.clone())
         // app_router
-        .nest(main_template, app_router(shared_app_state.clone()))
+        .nest(main_template, app_router(_s.clone()))
         // handle err
         .layer(axum::middleware::from_fn_with_state(
-            shared_app_state.clone(),
+            _s.clone(),
             project_middleware::handle_error,
         ))
         // extract user
         .layer(axum::middleware::from_fn_with_state(
-            shared_app_state.clone(),
+            _s.clone(),
             project_middleware::extract_user,
         ))
         .layer(CookieManagerLayer::new());

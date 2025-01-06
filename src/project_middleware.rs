@@ -1,6 +1,6 @@
 /// LOCAL
 use crate::model::{
-    app_state::AppStateProject,
+    app_state::{AppStateProject, SharedAppState},
     constant::{ID_USER_NONE, SESSION_NAME},
     project_error::ErrorMessage,
     user_dto::UserDTO,
@@ -31,9 +31,9 @@ use axum::{
 use futures::TryFutureExt;
 use reqwest::header::IF_NONE_MATCH;
 use tracing::instrument::WithSubscriber;
-//////////////////////////////////////////////////////////////////////
+// -----------------------------------------------------------------------
 use sqlx::Error as SqlError;
-use std::sync::Arc; // Sqlx use Arq, check via tree
+use std::{sync::Arc, thread}; // Sqlx use Arq, check via tree
 
 use tera::Context;
 use tower_cookies::Cookies;
@@ -47,7 +47,7 @@ use tower_cookies::Cookies;
 
 // TODO split into two part SQL requst and assertion
 pub async fn extract_user(
-    State(state): State<Arc<AppStateProject>>,
+    State(state): State<SharedAppState>,
     cookies: Cookies,
     mut req: Request<Body>,
     next: Next,
@@ -93,17 +93,22 @@ pub async fn extract_user(
 
     // Get the user - turn to function
     // TODO: keep session status and authed user ti avoid db request
-    //  SOME(USER) and so on ....
+    // NOTE: variables defined for deebuggind SQL mapping due to Mutex in use
+    let app_state: std::sync::Mutex<AppStateProject> = Arc::try_unwrap(state).unwrap();
+    let state: &AppStateProject = &*app_state.lock().unwrap();
+    let pool: &sqlx::Pool<sqlx::Sqlite> = &*state.pool;
+
+    // SOME(USER) and so on ....
     match sqlx::query_as!(
         UserDTO,
         r#"SELECT users.*, settings.openai_api_key
-            FROM users
-                LEFT JOIN settings
-                ON settings.user_id=users.id
+        FROM users
+        LEFT JOIN settings
+        ON settings.user_id=users.id
                 WHERE users.id = $1"#,
         user_id_session
     )
-    .fetch_optional(&*state.pool)
+    .fetch_optional(pool)
     .await
     {
         Ok(Some(current_user)) => {
@@ -176,7 +181,7 @@ pub async fn auth(
     next: Next,
 ) -> Response<Body> {
     tracing::info!("Enter AUTH MIDDLEWARE");
-    //////////////////////////////////////
+    // ----------------------------------------------------------------------------------
     // TODO: check next snippet wuth fn error_response
     //  if error we need to redirect to error page
     //  and insert header
@@ -266,7 +271,7 @@ pub async fn valid_openai_api_key(
 */
 pub async fn handle_error(
     Extension(current_user): Extension<Option<UserDTO>>,
-    State(state): State<Arc<AppStateProject>>,
+    State(state): State<SharedAppState>,
     req: Request<Body>,
     next: Next,
 ) -> Result<Response<Body>, StatusCode>
@@ -306,7 +311,10 @@ pub async fn handle_error(
 
             // Handle error
             let error_template = state
+                .lock()
+                .unwrap()
                 .tera_templates
+                // TODO: move to constants
                 .render("views/error.html", &context)
                 .unwrap();
 
@@ -317,6 +325,8 @@ pub async fn handle_error(
 
             // Handle error
             let rendered = state
+                .lock()
+                .unwrap()
                 .tera_templates
                 .render("views/main.html", &context)
                 .unwrap();
